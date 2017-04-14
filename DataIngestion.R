@@ -14,17 +14,17 @@ first_fracture <- d2 %>%
 # nrow(first_fracture)==length(unique(first_fracture$PID)) ## Check
 
 dat_attend <- d1 %>%
-  select(PID, age1, sex, starts_with('examyr')) %>%
+  select(PID, age1, sex, starts_with('examyr')) %>% # Work with calendar time
   gather(visit, yr, -PID, -age1, -sex) %>%
-  separate(visit, c('label','visit_no'), sep=6, convert=T) %>%
+  separate(visit, c('label','visit_no'), sep=6, convert=T) %>% # Extracts exam number
   select(-label) %>%
-  filter(!is.na(yr)) %>%
-  nest(visit_no,yr) %>%
+  filter(!is.na(yr)) %>% # The ones missing are the ones that weren't seen at that exam
+  nest(visit_no,yr) %>%  # Stratify on exam, calendar year
   mutate(start_yr = map_int(data, ~min(.$yr)),
-         end_yr = map_int(data, ~max(.$yr))) %>%
+         end_yr = map_int(data, ~max(.$yr))) %>%  # Identify period that subject is in study
   select(-data) %>%
   left_join(first_fracture) %>%
-  mutate(end_duration = ifelse(is.na(YrFrac), end_yr, YrFrac),
+  mutate(end_duration = ifelse(is.na(YrFrac), end_yr, YrFrac), # Stop time at first fracture
          frac_indic = ifelse(is.na(YrFrac), 0, 1),
          year1 = start_yr)
 
@@ -32,6 +32,8 @@ dat_attend <- d1 %>%
 # length(unique(dat_attend$PID))==nrow(dat_attend) ## Check
 
 explode_func <- function(d){
+  # This function takes a single record with start and stop times and explodes it into
+  # a dataset with 1 record per year in the study
   out <- tibble(
     yrs_in_study = as.integer(seq(d$start_yr, d$end_duration, by=1)),
     ages_in_study = as.integer(seq(d$age1, d$age1+(d$end_duration-d$start_yr), by=1)),
@@ -44,7 +46,7 @@ explode_func <- function(d){
 
 dat_attend_exploded <- dat_attend %>%
   nest(-PID) %>%
-  mutate(newdat = map(data, ~explode_func(.))) %>%
+  mutate(newdat = map(data, ~explode_func(.))) %>% # Explode for each subject and put back together
   select(-data) %>%
   unnest()
 
@@ -61,12 +63,12 @@ dat_attend_timedep <- dat_attend_exploded %>%
                                right=F),
          current_agegrp = cut(ages_in_study, seq(20,110,by=10),
                               label = paste0(seq(20,100,by=10),'-',seq(29,109,by=10)),
-                              include.lowest=T, right=F)) %>%
+                              include.lowest=T, right=F)) %>% # Create categorical calendar time and age
   select(-ages_in_study) %>%
   nest(yrs_in_study, status) %>%
   mutate(Start = map_int(data, ~min(.$yrs_in_study))-year1,
          Stop = map_int(data, ~max(.$yrs_in_study))-year1+1,
-         Status = map_int(data, ~sum(.$status))) %>%
+         Status = map_int(data, ~sum(.$status))) %>% # Create (Start, Stop, Status) data
   select(-data)
 
 sum(dat_attend_timedep$Status) == nrow(first_fracture)  ## Check
@@ -75,17 +77,17 @@ length(unique(dat_attend_timedep$PID)) == 5079 ## Check
 ## Compute rates
 options(knitr.kable.NA='') # Suppresses printing NA
 
-tmp <- dat_attend_timedep %>% mutate(py = Stop - Start)
-tmp %>% group_by(decade_in_study, current_agegrp) %>%
-  summarise(events = sum(Status), py = sum(py)) %>%
-  mutate(rate = events/py) %>%
+tmp <- dat_attend_timedep %>% mutate(py = Stop - Start) # Quick person-year calculation
+tmp %>% group_by(decade_in_study, current_agegrp) %>% # By each unique decade-age combination....
+  summarise(events = sum(Status), py = sum(py)) %>%   # Find numerator and denominator data...
+  mutate(rate = events/py) %>%                        # Compute the incidence rate
   select(-events, -py) %>%
   filter(!(current_agegrp %in% c('20-29','30-39','40-49','100-109')),
          rate > 0) %>%
   # ggplot(aes(x = decade_in_study, y = rate, group=current_agegrp, color=current_agegrp))+geom_line()+
   # theme(axis.text.x = element_text(angle=45, hjust=1))+
-  # labs(x = 'Decade', y = 'Incidence rate', color='Age group')
-  spread(current_agegrp, rate) %>% knitr::kable(digits=5)
+  # labs(x = 'Decade', y = 'Incidence rate', color='Age group') # Draw graph
+  spread(current_agegrp, rate) %>% knitr::kable(digits=5) # Create table
 
 
 # Using original epochs ---------------------------------------------------
@@ -98,18 +100,16 @@ dat_by_epoch <- dat_attend_exploded %>%
                               label = paste0(seq(20,100,by=10),'-',seq(29,109,by=10)),
                               include.lowest=T, right=F),
          epochs = cut(yrs_in_study, x,
-                      label = epochs, include.lowest=T, right=F)) %>%
+                      label = epochs, include.lowest=T, right=F)) %>% # Categorize age and calendar time
   nest(yrs_in_study, ages_in_study, status) %>%
   mutate(Start = map_int(data, ~min(.$yrs_in_study))-year1,
          Stop = map_int(data, ~max(.$yrs_in_study))-year1+1,
-         Status = map_int(data, ~sum(.$status))) %>%
+         Status = map_int(data, ~sum(.$status))) %>% #Create (Start, Stop, Status) data
   select(-data)
 
-out <- dat_by_epoch %>% mutate(py = Stop - Start) %>%
-  group_by(epochs, current_agegrp) %>%
-  summarise(events = sum(Status), py = sum(py), rate = events/py)
-
-ggplot(out, aes(x=epochs, y=rate, group=current_agegrp, color=current_agegrp))+geom_line()
+out <- dat_by_epoch %>% mutate(py = Stop - Start) %>% # Calculate person-years
+  group_by(epochs, current_agegrp) %>% # For each unique epoch-age combination....
+  summarise(events = sum(Status), py = sum(py), rate = events/py)  # Compute numerator, denominator, rate
 
 out  %>% select(-events, -py) %>%
   filter(!(current_agegrp %in% c('20-29','30-39','40-49','100-109')),
