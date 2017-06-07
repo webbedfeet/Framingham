@@ -6,18 +6,19 @@ require(sas7bdat)
 require(ggplot2)
 library(haven)
 
+datadir <- path.expand('~/Dropbox/NIAMS/Bhattacharyya/Framingham/data')
 #readin framingham and offspring general data
 # ex1<-read.sas7bdat("data/sas/vr_dates_2014_a_0912d_yr_fram.sas7bdat")
-ex1 <- read_sas('data/sas/vr_dates_2014_a_0912d_yr_fram.sas7bdat')
+ex1 <- read_sas(file.path(datadir,'sas/vr_dates_2014_a_0912d_yr_fram.sas7bdat'))
 #write.csv(ex1,file="vr_dates_2014_a_0912d_yr_fram.csv")
 # ex2<-read.sas7bdat("data/sas/vr_dates_2014_a_0912d_yr_offspring.sas7bdat")
-ex2<-read_sas("data/sas/vr_dates_2014_a_0912d_yr_offspring.sas7bdat")
+ex2<-read_sas(file.path(datadir,"sas/vr_dates_2014_a_0912d_yr_offspring.sas7bdat"))
 #0fram 1offspring 2os spouse 3gen3 7omni1 72omni2
 tbl_df(ex1);tbl_df(ex2)
 
 #validated data for year of fx
-yr1<-read_sas("data/sas/vr_fxrev_2012_0_0746d_yr_fram.sas7bdat")
-yr2<-read_sas("data/sas/vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat")
+yr1<-read_sas(file.path(datadir,"sas/vr_fxrev_2012_0_0746d_yr_fram.sas7bdat"))
+yr2<-read_sas(file.path(datadir,"sas/vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat"))
 
 
 

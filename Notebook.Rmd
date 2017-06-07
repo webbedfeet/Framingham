@@ -14,14 +14,15 @@ I evaluated the available data on Framingham. It seems that there are three corp
 require(nat.utils)
 require(stringr)
 require(tidyverse)
-bl <- zipinfo('newdat/framcohort.zip')
+datadir <- '/Users/abhijit/Dropbox/NIAMS/Bhattacharyya/Framingham/data'
+bl <- zipinfo(file.path(datadir,'newdat','framcohort.zip'))
 bl$Name %>% str_subset('fx') %>% str_subset('Datasets')
-bl <- zipinfo('newdat/framoffspring.zip')
+bl <- zipinfo(file.path(datadir,'newdat/framoffspring.zip'))
 bl$Name %>% str_subset('fx') %>% str_subset('Datasets')
 ```
 + A third corpus that contains a field for the computed year of fracture (computed as fxyear + Year of first exam) which isn't exactly correct, but nonetheless. 
 ```{r, echo=FALSE}
-dir(path='newdat.date', pattern='sas7bdat', recursive=T)
+dir(path=file.path(datadir,'newdat.date'), pattern='sas7bdat', recursive=T)
 ```
 
 The description of the various fields in each SAS dataset can be 
