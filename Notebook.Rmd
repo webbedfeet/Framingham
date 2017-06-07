@@ -34,3 +34,8 @@ revealed since it is an attribute of the data set. For example, `sapply(d, attr,
 2. Subdividing time into windows and verifying the incidence rates, both age-specific and age-standardized
 3. Identification of files and fields containing risk factors, comorbidities, demographics
 
+## June 7, 2017
+
+I put `datadir` in `.Rprofile` so that it can automatically detect the operating system and adapt the path to the 
+directory. I also put the data files on Dropbox, so that I can access it from anywhere. 
+
