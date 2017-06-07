@@ -1,8 +1,9 @@
 library(tidyverse)
 library(haven)
 
-d1 <- read_csv('data/vr_dates_2014_a_0912d_yr_fram.csv')[,-1] # Cohort data
-d2 <- read_csv('data/vr_fxrev_2012_0_0746d_yr_fram.csv')[,-1] # Hip fracture data
+
+d1 <- read_csv(file.path(datadir,'excel/vr_dates_2014_a_0912d_yr_fram.csv'))[,-1] # Cohort data
+d2 <- read_csv(file.path(datadir,'excel/vr_fxrev_2012_0_0746d_yr_fram.csv'))[,-1] # Hip fracture data
 
 first_fracture <- d2 %>%
   group_by(PID) %>%
@@ -16,7 +17,7 @@ first_fracture <- d2 %>%
 dat_attend <- d1 %>%
   select(PID, age1, sex, starts_with('examyr')) %>% # Work with calendar time
   gather(visit, yr, -PID, -age1, -sex) %>%
-  separate(visit, c('label','visit_no'), sep=6, convert=T) %>% # Extracts exam number
+  separate(visit, c('label','visit_no'), sep = 6, convert = T) %>% # Extracts exam number
   select(-label) %>%
   filter(!is.na(yr)) %>% # The ones missing are the ones that weren't seen at that exam
   nest(visit_no,yr) %>%  # Stratify on exam, calendar year
