@@ -1,5 +1,5 @@
 - tidyverse
-- haven
 - stringr
-- nat.utils
+- readxl
+- nacnudus/tidyxl
 
