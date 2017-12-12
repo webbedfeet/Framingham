@@ -1,7 +1,9 @@
 ---
 title: "Notebook"
 author: "Abhijit Dasgupta"
-output: html_notebook
+output:
+  html_notebook: default
+  html_document: default
 ---
 
 ## June 6, 2017
@@ -10,11 +12,9 @@ I evaluated the available data on Framingham. It seems that there are three corp
 
 + The original data from Framingham that doesn't contain any fracture data but contains all the other clinical information pertaining to the main cardiology study. This is stored in `archives`. 
 + A second corpus of data (stored in `newdat`), that contains fracture data from the exams. These files are given below:
-```{r, warning=FALSE, echo=FALSE}
-require(nat.utils)
-require(stringr)
-require(tidyverse)
-datadir <- '/Users/abhijit/Dropbox/NIAMS/Bhattacharyya/Framingham/data'
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+ProjTemplate::reload()
+datadir = set_datadir()
 bl <- zipinfo(file.path(datadir,'newdat','framcohort.zip'))
 bl$Name %>% str_subset('fx') %>% str_subset('Datasets')
 bl <- zipinfo(file.path(datadir,'newdat/framoffspring.zip'))
@@ -38,4 +38,19 @@ revealed since it is an attribute of the data set. For example, `sapply(d, attr,
 
 I put `datadir` in `.Rprofile` so that it can automatically detect the operating system and adapt the path to the 
 directory. I also put the data files on Dropbox, so that I can access it from anywhere. 
+
+From my notes, the description of the central question of this study is as follows:
+
+> What fraction of variability in the estimate of hip fracture incidence can be explained by risk factors and how does this change over time?
+
+Table 1 in the paper would look at summaries of risk factors by decade (1970-2000).
+
+# December 12, 2017
+
+## Data Quality
+
+Data is currently in an unusable pivot table format, that needs to be retrieved and rectified. This data is in 
+the `munged` data folder
+
+
 
