@@ -53,4 +53,12 @@ Data is currently in an unusable pivot table format, that needs to be retrieved 
 the `munged` data folder
 
 
+# January 9, 2018
+
+The risk factors data sent by Tim was fixed and ingested using `tidyxl` means. Summaries were computed for all
+the binary risk factors for three years: 1980, 1990, 2000. This is based on exam years 16, 21 and 26, from Tim's
+analysis. 
+
+Now we need to compute fracture incidence in those 3 years.
+
 
