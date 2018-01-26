@@ -5,8 +5,8 @@ library(haven)
 d1 <- read_csv('vr_dates_2014_a_0912d_yr_fram.csv')[,-1] # Cohort data
 d2 <- read_csv('vr_fxrev_2012_0_0746d_yr_fram.csv')[,-1] # Hip fracture data
 
-d11 <- read_sas('vr_dates_2014_a_0912d_yr_fram.sas7bdat')
-d21 <- read_sas('vr_fxrev_2012_0_0746d_yr_fram.sas7bdat')
+d11 <- read_sas(file.path(datadir,'sas','vr_dates_2014_a_0912d_yr_fram.sas7bdat'))
+d21 <- read_sas(file.path(datadir, 'sas','vr_fxrev_2012_0_0746d_yr_fram.sas7bdat'))
 d31 <- read_sas('vr_dates_2014_a_0912d_yr_offspring.sas7bdat')
 d41 <- read_sas('vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat')
 

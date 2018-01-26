@@ -4,3 +4,8 @@
 .Ruserdata
 tmp.*
 data/*
+packrat/*
+*.zip
+*.html
+*.sas7bdat
+*.log

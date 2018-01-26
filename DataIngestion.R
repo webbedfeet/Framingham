@@ -1,9 +1,10 @@
-library(tidyverse)
-library(haven)
-
+source('lib/reload.R')
+reload()
 
 d1 <- read_csv(file.path(datadir,'excel/vr_dates_2014_a_0912d_yr_fram.csv'))[,-1] # Cohort data
+d1 <- read_sas(file.path(datadir, 'sas/vr_dates_2014_a_0912d_yr_fram.sas7bdat'))
 d2 <- read_csv(file.path(datadir,'excel/vr_fxrev_2012_0_0746d_yr_fram.csv'))[,-1] # Hip fracture data
+d2 <- read_sas(file.path(datadir, 'sas/vr_fxrev_2012_0_0746d_yr_fram.sas7bdat'))
 
 first_fracture <- d2 %>%
   group_by(PID) %>%
