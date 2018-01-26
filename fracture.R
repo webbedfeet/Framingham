@@ -1,7 +1,7 @@
 # setwd("P:/FranWork/Hip fracture")
 #library(sparklyr)
 #sc <- spark_connect(master="local")
-source('lib/reload.R'); reload()
+ProjTemplate::reload()
 
 #readin framingham and offspring general data
 # ex1<-read.sas7bdat("data/sas/vr_dates_2014_a_0912d_yr_fram.sas7bdat")

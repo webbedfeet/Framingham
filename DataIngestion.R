@@ -1,5 +1,4 @@
-source('lib/reload.R')
-reload()
+ProjTemplate::reload()
 
 d1 <- read_csv(file.path(datadir,'excel/vr_dates_2014_a_0912d_yr_fram.csv'))[,-1] # Cohort data
 d1 <- read_sas(file.path(datadir, 'sas/vr_dates_2014_a_0912d_yr_fram.sas7bdat'))
