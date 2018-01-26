@@ -34,3 +34,6 @@ incidence_summary %>% left_join(risk_summaries) %>%
   gather(variable, value, -year) %>%
   ggplot(aes(year, value, color=variable))+
     geom_line()
+
+decade_dat <- incidence_summary %>% left_join(risk_summaries) %>%
+  select(-decade_in_study)
