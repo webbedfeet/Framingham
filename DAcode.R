@@ -105,6 +105,11 @@ tmp %>% group_by(decade_in_study, current_agegrp) %>% # By each unique decade-ag
 # labs(x = 'Decade', y = 'Incidence rate', color='Age group') # Draw graph
 spread(current_agegrp, rate) %>% knitr::kable(digits=5) # Create table
 
+tmp %>% group_by(decade_in_study) %>%
+  summarise(events = sum(Status), py = sum(py)) %>%
+  mutate(rate = events/py) %>%
+  select(-events, -py) %>%
+  filter(decade_in_study %in% c('1980-1989','1990-1999','2000-2009'))
 save(dat_attend, dat_attend_exploded, dat_attend_timedep,
      file = file.path(datadir,'rda','event_data.rda'), compress=T)
 
