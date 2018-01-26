@@ -1,16 +1,14 @@
-library(tidyverse)
-library(haven)
+ProjTemplate::reload()
 
-
-d1 <- read_csv('vr_dates_2014_a_0912d_yr_fram.csv')[,-1] # Cohort data
-d2 <- read_csv('vr_fxrev_2012_0_0746d_yr_fram.csv')[,-1] # Hip fracture data
+# d1 <- read_csv('vr_dates_2014_a_0912d_yr_fram.csv')[,-1] # Cohort data
+# d2 <- read_csv('vr_fxrev_2012_0_0746d_yr_fram.csv')[,-1] # Hip fracture data
 
 d11 <- read_sas(file.path(datadir,'sas','vr_dates_2014_a_0912d_yr_fram.sas7bdat'))
 d21 <- read_sas(file.path(datadir, 'sas','vr_fxrev_2012_0_0746d_yr_fram.sas7bdat'))
-d31 <- read_sas('vr_dates_2014_a_0912d_yr_offspring.sas7bdat')
-d41 <- read_sas('vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat')
+d31 <- read_sas(file.path(datadir,'sas','vr_dates_2014_a_0912d_yr_offspring.sas7bdat'))
+d41 <- read_sas(file.path(datadir,'sas','vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat'))
 
-first_fracture <- d2 %>%
+first_fracture <- d21 %>%
 group_by(PID) %>%
 filter(fxdate == min(fxdate)) %>%
 ungroup() %>%
@@ -21,15 +19,15 @@ ungroup() %>%
 # nrow(first_fracture)==length(unique(first_fracture$PID)) ## Check
 
 
-dat_attend <- d1 %>%
+dat_attend <- d11 %>%
           select(PID, age1, sex, starts_with('examyr')) %>% # Work with calendar time
-          gather(visit, yr, -PID, -age1, -sex) %>%
+          gather(visit, yr, -PID, -age1, -sex)  %>%
           separate(visit, c('label','visit_no'), sep=6, convert=T) %>% # Extracts exam number
           select(-label) %>%
           filter(!is.na(yr)) %>% # The ones missing are the ones that weren't seen at that exam
           nest(visit_no,yr) %>%  # Stratify on exam, calendar year
-          mutate(start_yr = map_int(data, ~min(.$yr)),
-                 end_yr = map_int(data, ~max(.$yr))) %>%  # Identify period that subject is in study
+          mutate(start_yr = map_dbl(data, ~min(.$yr)),
+                 end_yr = map_dbl(data, ~max(.$yr))) %>%  # Identify period that subject is in study
           select(-data) %>%
           left_join(first_fracture) %>%
           mutate(end_duration = ifelse(is.na(YrFrac), end_yr, YrFrac), # Stop time at first fracture
@@ -107,7 +105,8 @@ tmp %>% group_by(decade_in_study, current_agegrp) %>% # By each unique decade-ag
 # labs(x = 'Decade', y = 'Incidence rate', color='Age group') # Draw graph
 spread(current_agegrp, rate) %>% knitr::kable(digits=5) # Create table
 
-
+save(dat_attend, dat_attend_exploded, dat_attend_timedep,
+     file = file.path(datadir,'rda','event_data.rda'), compress=T)
 
 
 # Using original epochs ---------------------------------------------------
