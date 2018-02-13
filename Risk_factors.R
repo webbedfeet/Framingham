@@ -35,11 +35,11 @@ load('data/rda/munged_data_Oct17.rda')
 
 ## Binary variable summaries by year/decade
 
-binary_summaries_orig <- original_datum %>% select(year, diab:smoke) %>%
+binary_summaries_orig <- original_datum %>% select(year,beta,  diab:smoke) %>%
   group_by(year) %>%
   summarise_all(funs(100*mean(., na.rm = T)))
 
-binary_summaries_off <- offspring_datum %>% select(year, diab:smoke, -premarin) %>%
+binary_summaries_off <- offspring_datum %>% select(year, beta, bmi,diab:smoke, -premarin) %>%
   group_by(year) %>%
   summarise_all(funs(100*mean(., na.rm = T)))
 
@@ -65,10 +65,10 @@ analytic_data_orig <- tmp %>% group_by(decade_in_study) %>%
   mutate(year = str_extract(decade_in_study, '^\\d{4}')) %>%
   left_join(binary_summaries_orig) %>% ungroup() %>%
   rename(Diabetes = diab, Estrogen = estrogen, Menopause = menopause,
-         `Heavy drinking` = rf.etof, Smoking = smoke)
+         `Heavy drinking` = rf.etof, Smoking = smoke, BetaBlockers = beta)
 
 knitr::kable(analytic_data_orig,digits = 3,
-             col.names = c('Decade','Fracture Rate','Year','Diabetes','Estrogen','Menopause','Heavy drinking','Smoking'),
+             col.names = c('Decade','Fracture Rate','Year','Beta Blockers','Diabetes','Estrogen','Menopause','Heavy drinking','Smoking'),
              caption = "**Table 1:** Summary table of fracture rates and predictor prevalences")
 #ggplot(analytic_data_orig, aes(year, 100*rate, group=1))+geom_point()+geom_line(stat='identity')
 
@@ -94,7 +94,7 @@ ggplot() +
 #' Figure 2 shows the relationship between the rate of fractures (x-axis) with each of the predictor
 #' prevalences. We see that diabetes and estrogen use have almost linear association with the fracture rate
 #+ fig2, fig.align='center', fig.cap = '**Figure 2:** Association between fracture rate and predictor prevalences'
-analytic_data_orig %>% select(rate, Diabetes:Smoking) %>%
+analytic_data_orig %>% select(rate, BetaBlockers:Smoking) %>%
   mutate(rate = 1000*rate) %>%
   gather(variable, value, -rate) %>%
   ggplot(aes(x = rate, y = value, group=variable, color=variable))+geom_line() +
@@ -105,7 +105,7 @@ analytic_data_orig %>% select(rate, Diabetes:Smoking) %>%
 #' each predictor and compute the R^2^ value, which gives this proportion. This is shown in Table 2, below
 #'
 #+ tab2, results = 'asis'
-analytic_data_orig %>% select(rate, Diabetes:Smoking) %>% mutate(rate = 1000*rate) %>%
+analytic_data_orig %>% select(rate, BetaBlockers:Smoking) %>% mutate(rate = 1000*rate) %>%
   gather(variable, value, -rate) %>%
   nest(-variable) %>%
   mutate(mods = map(data, ~lm(rate ~ value, data = .))) %>%
