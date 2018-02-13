@@ -50,20 +50,18 @@ ProjTemplate::reload()
 #   select(-decade_in_study)
 #
 
-# Unifying data for time-dependent analyses -------------------------------
+# Unifying data for time-dependent analyses: Attendance and Fractures -------------------------------
 
+## Original cohort
 d11 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_fram.sas7bdat"))
 d21 <- read_sas(file.path(datadir, "sas", "vr_fxrev_2012_0_0746d_yr_fram.sas7bdat"))
+
 first_fracture_orig <- d21 %>%
   group_by(PID) %>%
   filter(fxdate == min(fxdate)) %>%
   ungroup() %>%
   select(PID, fxdate, YrFrac) %>%
   distinct()
-
-
-# nrow(first_fracture)==length(unique(first_fracture$PID)) ## Check
-
 
 dat_attend_orig <- d11 %>%
   select(PID, age1, sex, starts_with("examyr")) %>% # Work with calendar time
@@ -98,6 +96,7 @@ dat_attend_orig_exploded <-
   unnest() %>%
   select(PID:sex, yrs, frac_indic, age_cur)
 
+## Offspring cohort
 d31 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_offspring.sas7bdat"))
 d41 <- read_sas(file.path(datadir, "sas", "vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat"))
 
@@ -139,3 +138,32 @@ dat_attend_offspring_exploded <- dat_attend_offspring[rep(seq_len(nrow(dat_atten
     ))) %>%
   unnest() %>%
   select(PID:sex, yrs, frac_indic, age_cur)
+
+
+# Death -------------------------------------------------------------------
+
+death_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_survdth_2011_m_0786d.sas7bdat'))
+death_off <-  read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','vr_survdth_2011_m_0786d.sas7bdat')) %>%
+  filter(IDTYPE == 1)
+
+tmp <- dat_attend_orig %>%
+  select(PID, start_yr, end_yr) %>%
+  mutate(start_dt = as.Date(paste0(as.character(start_yr),'-07-01'))) %>%
+  left_join(death_orig) %>%
+  mutate(death_dt = (start_dt + datedth)) %>%
+  select(PID, start_dt, DTHRVWD, datedth, death_dt) %>%
+  rename(death_indic = DTHRVWD, death_date = datedth)
+dat_attend_orig <- dat_attend_orig %>% left_join(tmp)
+
+
+tmp <- dat_attend_offspring %>%
+  select(PID, start_yr, end_yr) %>%
+  mutate(start_dt = as.Date(paste0(as.character(start_yr),'-07-01'))) %>%
+  left_join(death_off) %>%
+  mutate(death_dt = (start_dt + datedth)) %>%
+  select(PID, start_dt, DTHRVWD, datedth, death_dt) %>%
+  rename(death_indic = DTHRVWD, death_date = datedth)
+dat_attend_offspring <- dat_attend_offspring %>% left_join(tmp)
+
+
+save(dat_attend_offspring, dat_attend_offspring_exploded, dat_attend_orig, dat_attend_orig_exploded, file = 'data/rda/TimeAndFractures.rda', compress=T)
