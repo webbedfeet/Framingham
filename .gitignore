@@ -9,3 +9,5 @@ packrat/*
 *.html
 *.sas7bdat
 *.log
+*.html
+*.docx
