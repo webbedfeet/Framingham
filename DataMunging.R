@@ -112,10 +112,11 @@ dat_attend_offspring <- d31 %>%
   select(-data)
 
 first_fracture_offspring <- d41 %>%
+  filter(of_FxSite == 1) %>%
   group_by(PID) %>%
   filter(of_fxdate == min(of_fxdate, na.rm = T)) %>%
   ungroup() %>%
-  select(PID, YrFrac)
+  select(PID, of_fxdate, YrFrac)
 
 dat_attend_offspring <- dat_attend_offspring %>%
   left_join(first_fracture_offspring) %>%
@@ -187,3 +188,9 @@ d31 %>%
 dat_attend_offspring_exploded %>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
 
 
+# Risk factors by exam ------------------------------------------------------------------------
+
+## Diabetes
+
+diab_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_diab_ex28_0_0601d.sas7bdat'))
+diab_off <- read_sas()
