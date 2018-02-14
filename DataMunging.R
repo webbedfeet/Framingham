@@ -245,4 +245,10 @@ bmi_orig <- read_sas(file.path(datadir,'newdat','framcohort','Datasets','bmi.sas
 
 ### Not using BMI from offspring cohort since it is only recorded at exam 2
 
+## Smoking
 
+source('munging_smoking.R')
+
+## Drinking
+
+source('munging_drinking.R')
