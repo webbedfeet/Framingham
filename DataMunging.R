@@ -234,3 +234,15 @@ meno_off <- read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','vr_
   arrange(PID) %>%
   mutate_all(as.integer)
 
+## BMI
+
+bmi_orig <- read_sas(file.path(datadir,'newdat','framcohort','Datasets','bmi.sas7bdat')) %>%
+  set_names(toupper(names(.))) %>%
+  select(PID, starts_with("BMI")) %>%
+  gather(exam_no, bmi, -PID) %>%
+  mutate(exam_no = as.integer(str_replace(exam_no,'BMI',''))) %>%
+  arrange(PID)
+
+### Not using BMI from offspring cohort since it is only recorded at exam 2
+
+
