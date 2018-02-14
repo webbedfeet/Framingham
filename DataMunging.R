@@ -189,5 +189,48 @@ save(dat_attend_offspring, dat_attend_offspring_exploded, dat_attend_orig, dat_a
 
 ## Diabetes
 
-diab_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_diab_ex28_0_0601d.sas7bdat'))
-diab_off <- read_sas()
+diab_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_diab_ex28_0_0601d.sas7bdat')) %>%
+  select(PID, starts_with('BG140_curr')) %>%
+  gather(variable, diab, -PID) %>%
+  separate(variable, c('label','exam_no'), sep = 15) %>%
+  select(-label) %>%
+  arrange(PID) %>%
+  mutate(exam_no = as.integer(exam_no),
+         diab = as.integer(diab)) %>%
+  group_by(PID) %>%
+  tidyr::fill(diab) %>%
+  ungroup()
+diab_off <- read_sas(file.path(datadir, 'newdat','framoffspring', 'Datasets', 'ldia1_7.sas7bdat')) %>%
+  set_names(toupper(names(.))) %>%
+  select(PID, starts_with("DIAB")) %>%
+  gather(variable, diab, -PID) %>%
+  separate(variable, c('label','exam_no'), sep = 4) %>%
+  mutate(exam_no = as.integer(exam_no),
+         diab = as.integer(diab)) %>%
+  select(-label) %>%
+  group_by(PID) %>%
+  tidyr::fill(diab) %>%
+  ungroup()
+
+## Menopause
+
+meno_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_meno_ex14_0_0153d.sas7bdat')) %>%
+  select(PID, AM2, AM5) %>%
+  rename(age_meno = AM2, exam_meno = AM5) %>%
+  mutate(early_meno = ifelse(age_meno < 45, 1, 0)) %>%
+  mutate_all(as.integer) %>%
+  arrange(PID)
+
+meno_off <- read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','vr_meno_ex07_1_0152d.sas7bdat')) %>%
+  select(PID, STOP_AGE, starts_with("MSTAT")) %>%
+  mutate_at(vars(starts_with("MSTAT")), function(x) ifelse(x == 0, 0, 1)) %>%
+  gather(variable, value, starts_with('MSTAT')) %>%
+  group_by(PID) %>%
+  filter( row_number() == detect_index(value, function(x) x == 1)) %>%
+  separate(variable, c('label','exam_meno'), sep = 5) %>%
+  select(-label, -value) %>%
+  mutate(early_meno = ifelse(STOP_AGE < 45, 1, 0)) %>%
+  rename(age_meno = STOP_AGE) %>%
+  arrange(PID) %>%
+  mutate_all(as.integer)
+
