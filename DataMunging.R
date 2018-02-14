@@ -166,10 +166,6 @@ tmp <- dat_attend_offspring %>%
   rename(death_indic = DTHRVWD, death_date = datedth)
 dat_attend_offspring <- dat_attend_offspring %>% left_join(tmp)
 
-
-save(dat_attend_offspring, dat_attend_offspring_exploded, dat_attend_orig, dat_attend_orig_exploded, file = 'data/rda/TimeAndFractures.rda', compress=T)
-
-
 # Adding exam numbers to years --------------------------------------------
 d11 %>%
   select(PID, starts_with('examyr')) %>%
@@ -177,7 +173,7 @@ d11 %>%
   separate(exam, c('label', 'exam_no'), sep = 6, convert = T) %>%
   arrange(PID) %>%
   select(-label) -> bl
-dat_attend_orig_exploded %>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
+dat_attend_orig_exploded %<>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
 
 d31 %>%
   select(PID, starts_with('examyr')) %>%
@@ -185,8 +181,9 @@ d31 %>%
   separate(exam, c('label', 'exam_no'), sep = 6, convert = T) %>%
   arrange(PID) %>%
   select(-label) -> bl
-dat_attend_offspring_exploded %>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
+dat_attend_offspring_exploded %<>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
 
+save(dat_attend_offspring, dat_attend_offspring_exploded, dat_attend_orig, dat_attend_orig_exploded, file = 'data/rda/TimeAndFractures.rda', compress=T)
 
 # Risk factors by exam ------------------------------------------------------------------------
 
