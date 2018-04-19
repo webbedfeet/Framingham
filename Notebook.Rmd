@@ -1,6 +1,7 @@
 ---
 title: "Notebook"
 author: "Abhijit Dasgupta"
+date: Last updated `r format(Sys.time(), '%d %B, %Y')`
 output:
   html_notebook: default
   html_document: default
@@ -61,4 +62,23 @@ analysis.
 
 Now we need to compute fracture incidence in those 3 years.
 
+# April 19, 2018
 
+We have already computed event occurrences per year in `DataMunging.R`. What we need to extract are
+per-year risk factor prevalences. This is non-trivial since some risk factors are coded differently
+in different years and the like. To speed up this process, I have converted all the codebooks to 
+markdown format and written a shell script `extract.sh` stored with the data that looks through the 
+codebooks of the questionnaires and extracts lines based on keyword searches. I can now peruse these
+distilled files to look for the right fields to grab for each exam. We will then merge them with the 
+fracture data to get a dataset with risk factors included by exam, using LVCF to impute on missing years. 
+
+What are the risk factors we are collecting?
+
+1. Prevalence of diabetes
+2. Prevalence of estrogen supplement use among women
+3. Proportion of women who are post-menopausal, and who had menopause early (before 45)
+4. Prevalence of smoking
+5. Prevalence of heavy drinking, meaning more than 3 drinks per week.
+
+There are summaries of diabetes, 
+ 
