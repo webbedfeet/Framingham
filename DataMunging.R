@@ -112,10 +112,11 @@ dat_attend_offspring <- d31 %>%
   select(-data)
 
 first_fracture_offspring <- d41 %>%
+  filter(of_FxSite == 1) %>%
   group_by(PID) %>%
   filter(of_fxdate == min(of_fxdate, na.rm = T)) %>%
   ungroup() %>%
-  select(PID, YrFrac)
+  select(PID, of_fxdate, YrFrac)
 
 dat_attend_offspring <- dat_attend_offspring %>%
   left_join(first_fracture_offspring) %>%
@@ -165,10 +166,6 @@ tmp <- dat_attend_offspring %>%
   rename(death_indic = DTHRVWD, death_date = datedth)
 dat_attend_offspring <- dat_attend_offspring %>% left_join(tmp)
 
-
-save(dat_attend_offspring, dat_attend_offspring_exploded, dat_attend_orig, dat_attend_orig_exploded, file = 'data/rda/TimeAndFractures.rda', compress=T)
-
-
 # Adding exam numbers to years --------------------------------------------
 d11 %>%
   select(PID, starts_with('examyr')) %>%
@@ -176,7 +173,7 @@ d11 %>%
   separate(exam, c('label', 'exam_no'), sep = 6, convert = T) %>%
   arrange(PID) %>%
   select(-label) -> bl
-dat_attend_orig_exploded %>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
+dat_attend_orig_exploded %<>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
 
 d31 %>%
   select(PID, starts_with('examyr')) %>%
@@ -184,6 +181,74 @@ d31 %>%
   separate(exam, c('label', 'exam_no'), sep = 6, convert = T) %>%
   arrange(PID) %>%
   select(-label) -> bl
-dat_attend_offspring_exploded %>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
+dat_attend_offspring_exploded %<>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
 
+save(dat_attend_offspring, dat_attend_offspring_exploded, dat_attend_orig, dat_attend_orig_exploded, file = 'data/rda/TimeAndFractures.rda', compress=T)
 
+# Risk factors by exam ------------------------------------------------------------------------
+
+## Diabetes
+
+diab_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_diab_ex28_0_0601d.sas7bdat')) %>%
+  select(PID, starts_with('BG140_curr')) %>%
+  gather(variable, diab, -PID) %>%
+  separate(variable, c('label','exam_no'), sep = 15) %>%
+  select(-label) %>%
+  arrange(PID) %>%
+  mutate(exam_no = as.integer(exam_no),
+         diab = as.integer(diab)) %>%
+  group_by(PID) %>%
+  tidyr::fill(diab) %>%
+  ungroup()
+diab_off <- read_sas(file.path(datadir, 'newdat','framoffspring', 'Datasets', 'ldia1_7.sas7bdat')) %>%
+  set_names(toupper(names(.))) %>%
+  select(PID, starts_with("DIAB")) %>%
+  gather(variable, diab, -PID) %>%
+  separate(variable, c('label','exam_no'), sep = 4) %>%
+  mutate(exam_no = as.integer(exam_no),
+         diab = as.integer(diab)) %>%
+  select(-label) %>%
+  group_by(PID) %>%
+  tidyr::fill(diab) %>%
+  ungroup()
+
+## Menopause
+
+meno_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_meno_ex14_0_0153d.sas7bdat')) %>%
+  select(PID, AM2, AM5) %>%
+  rename(age_meno = AM2, exam_meno = AM5) %>%
+  mutate(early_meno = ifelse(age_meno < 45, 1, 0)) %>%
+  mutate_all(as.integer) %>%
+  arrange(PID)
+
+meno_off <- read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','vr_meno_ex07_1_0152d.sas7bdat')) %>%
+  select(PID, STOP_AGE, starts_with("MSTAT")) %>%
+  mutate_at(vars(starts_with("MSTAT")), function(x) ifelse(x == 0, 0, 1)) %>%
+  gather(variable, value, starts_with('MSTAT')) %>%
+  group_by(PID) %>%
+  filter( row_number() == detect_index(value, function(x) x == 1)) %>%
+  separate(variable, c('label','exam_meno'), sep = 5) %>%
+  select(-label, -value) %>%
+  mutate(early_meno = ifelse(STOP_AGE < 45, 1, 0)) %>%
+  rename(age_meno = STOP_AGE) %>%
+  arrange(PID) %>%
+  mutate_all(as.integer)
+
+## BMI
+
+bmi_orig <- read_sas(file.path(datadir,'newdat','framcohort','Datasets','bmi.sas7bdat')) %>%
+  set_names(toupper(names(.))) %>%
+  select(PID, starts_with("BMI")) %>%
+  gather(exam_no, bmi, -PID) %>%
+  mutate(exam_no = as.integer(str_replace(exam_no,'BMI',''))) %>%
+  arrange(PID)
+
+### Not using BMI from offspring cohort since it is only recorded at exam 2
+
+## Smoking
+
+source('munging_smoking.R')
+
+## Drinking
+
+source('munging_drinking.R')
