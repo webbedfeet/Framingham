@@ -219,6 +219,7 @@ meno_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_me
   rename(age_meno = AM2, exam_meno = AM5) %>%
   mutate(early_meno = ifelse(age_meno < 45, 1, 0)) %>%
   mutate_all(as.integer) %>%
+  mutate(PID = as.character(PID)) %>%
   arrange(PID)
 
 meno_off <- read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','vr_meno_ex07_1_0152d.sas7bdat')) %>%
@@ -232,7 +233,9 @@ meno_off <- read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','vr_
   mutate(early_meno = ifelse(STOP_AGE < 45, 1, 0)) %>%
   rename(age_meno = STOP_AGE) %>%
   arrange(PID) %>%
-  mutate_all(as.integer)
+  mutate_all(as.integer) %>%
+  ungroup() %>%
+  mutate(PID = as.character(PID))
 
 ## BMI
 
