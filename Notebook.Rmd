@@ -94,3 +94,8 @@ What are the risk factors we are collecting?
 5. Prevalence of heavy drinking, meaning more than 3 drinks per day.
 
 There are summaries of diabetes, menopause, and medication that can be useful.
+
+### Progress
+Events and ascertainment of menopause status, diabetes status are done in `DataMunging.R`. The 
+parsing of documentation to determine smoking status and alcohol consumption is done. We now need to 
+identify the particular variables for each available exam to extract to get this information. 
