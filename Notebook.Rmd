@@ -61,4 +61,14 @@ analysis.
 
 Now we need to compute fracture incidence in those 3 years.
 
+# Wed Feb 14 10:33:12 2018 ------------------------------
 
+We are setting up the full Framingham data, both original and offspring cohorts, to allow time-varying
+survival analysis and competing risks analysis. As of now, all but the smoking and drinking are done (these two require munging actual questionnaire data). 
+
+The main analyses under consideration are:
+
+1. A competing risks analysis with death as the competing risk. We can consider people censored if
+they die over 2 years (my idea) after their last exam, else they are censored
+2. A finer ecological analysis looking at prospective 5 year risks based on risk factors at each
+year in the study.
