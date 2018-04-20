@@ -11,3 +11,4 @@ packrat/*
 *.log
 *.html
 *.docx
+*.nb.html
