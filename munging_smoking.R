@@ -296,4 +296,4 @@ smoke_off <- smoke_off %>% bind_rows(.id = 'exam') %>%
 
 # Save data -----------------------------------------------------------------------------------
 
-
+save(smoke_orig, smoke_off, file = 'data/rda/smoking.rda', compress = T)
