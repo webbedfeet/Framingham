@@ -198,7 +198,29 @@ smoke_orig <- list(
   mutate(smoking = case_when(is.na(FW026) ~ NA_real_,
                              FW026 == 0 ~ 0,
                              TRUE ~ 1)) %>%
-  select(PID, smoking))
+  select(PID, smoking),
+## dummy exam 1
+'exam1' = read_sas(file.path(datadir, 'lex0_7.sas7bdat')) %>% select(PID) %>%
+  mutate(smoking = NA_real_),
+## dummy exam 2
+'exam2' = read_sas(file.path(datadir, 'lex0_7.sas7bdat')) %>% select(PID) %>%
+  mutate(smoking = NA_real_),
+
+## dummy exam 3
+'exam3' = read_sas(file.path(datadir, 'lex0_7.sas7bdat')) %>% select(PID) %>%
+  mutate(smoking = NA_real_),
+## dummy exam 4
+'exam4' = read_sas(file.path(datadir, 'lex0_7.sas7bdat')) %>% select(PID) %>%
+  mutate(smoking = NA_real_),
+## dummy exam 6
+'exam6' = read_sas(file.path(datadir, 'lex0_7.sas7bdat')) %>% select(PID) %>%
+  mutate(smoking = NA_real_),
+## dummy exam 16
+'exam16' = read_sas(file.path(datadir, 'lex0_16.sas7bdat')) %>% select(PID) %>%
+  mutate(smoking = NA_real_))
+
+
+
 smoke_orig <- smoke_orig %>%
   bind_rows(.id = 'exam') %>%
   mutate(PID = as.character(PID),
@@ -211,18 +233,67 @@ smoke_orig <- smoke_orig %>%
 
 # Offspring cohort -----------------------------------------------------------------------------
 
+datadir <- file.path(set_datadir(), 'archives','framoffspring', 'Datasets')
+
+smoke_off <- list(
 ## lex1_1
 ### A99 gives cig status (1 = yes, . = NA, rest = no)
+'exam1' = read_sas(file.path(datadir, 'lex1_1.sas7bdat')) %>% select(pid, A99) %>%
+  mutate(smoking = case_when(is.na(A99) ~ NA_real_,
+                             A99 == 1 ~ 1,
+                             TRUE ~ 0)) %>%
+  select(pid, smoking),
 ## lex1_2v2
 ### B86 gives smoking status (0 = no, 1 = yes, . = NA)
+'exam2' = read_sas(file.path(datadir, 'lex1_2v2.sas7bdat')) %>% select(pid, B86) %>%
+  mutate(smoking = case_when(is.na(B86) ~ NA_real_,
+                             B86 == 0 ~ 0,
+                             TRUE ~ 1)) %>%
+  select(pid, smoking),
 ## lex1_3
 ### C68 gives cig status (0 = no, . = NA, rest = yes)
+'exam3' = read_sas(file.path(datadir, 'lex1_3.sas7bdat')) %>% select(pid, C68) %>%
+  mutate(smoking = case_when(is.na(C68) ~ NA_real_,
+                             C68 == 0 ~ 0,
+                             TRUE ~ 1)) %>%
+  select(pid, smoking),
 ## lex1_4
-### D093 gives cig status (0 = no, 1 = yes, . = NA)
+### D093 gives cig status (0 = no, 1 = yes, . = NA
+'exam4' = read_sas(file.path(datadir, 'lex1_4.sas7bdat')) %>% select(pid, D093) %>%
+  mutate(smoking = case_when(is.na(D093) ~ NA_real_,
+                             D093 == 0 ~ 0,
+                             TRUE ~ 1)) %>%
+  select(pid, smoking),
 ## lex1_5
 ### E319 gives cig status (0 = no, 1 = yes, . = NA)
+'exam5' = read_sas(file.path(datadir, 'lex1_5.sas7bdat')) %>% select(pid, E319) %>%
+  mutate(smoking  = case_when(is.na(E319) ~ NA_real_,
+                              E319 == 0 ~ 0,
+                              TRUE ~ 1)) %>%
+  select(pid, smoking),
 ## lex1_6
-### F288 gives cig status (0 = no, 1 = yes, . = NA)
+### F288 gives cig status (0 = no, 1 = yes, . = NA
+'exam6' = read_sas(file.path(datadir, 'lex1_6.sas7bdat')) %>% select(pid, F288) %>%
+  mutate(smoking = case_when(is.na(F288) ~ NA_real_,
+                             F288 == 0 ~ 0,
+                             TRUE ~ 1)) %>%
+  select(pid, smoking),
 ## lex1_7
 ### G116 gives cig status (0 = no, 1 = yes, . = NA)
+'exam7' = read_sas(file.path(datadir, 'lex1_7.sas7bdat')) %>% select(pid, G116) %>%
+  mutate(smoking = case_when(is.na(G116)~ NA_real_,
+                             G116 == 0 ~ 0,
+                             TRUE ~ 1)) %>%
+  select(pid, smoking))
+smoke_off <- smoke_off %>% bind_rows(.id = 'exam') %>%
+  mutate(exam = as.numeric(str_remove(exam, 'exam')),
+         pid = as.character(pid)) %>%
+  arrange(pid, exam) %>%
+  group_by(pid) %>%
+  tidyr::fill(smoking) %>%
+  ungroup()
+
+
+# Save data -----------------------------------------------------------------------------------
+
 
