@@ -216,6 +216,14 @@ drink_origin <- list(
   mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
   select(PID, rf_etoh))
 
+drink_origin <- bind_rows(drink_origin, .id = 'exam') %>%
+  mutate(PID = as.character(PID),
+         exam = as.numeric(str_remove(exam,'exam')),
+         rf_etoh = as.numeric(rf_etoh)) %>%
+  arrange(PID, exam) %>% group_by(PID) %>%
+  tidyr::fill(rf_etoh) %>%
+  ungroup()
+
 # Offspring cohort -----------------------------------------------------------------------------
 
 datadir <- file.path(set_datadir(), 'archives','framoffspring','Datasets')
@@ -247,7 +255,7 @@ drink_offspring <- list(
 ## lex1_5
 'exam5' = read_sas(file.path(datadir, 'lex1_5.sas7bdat')) %>% select(pid, E310, E313, E316) %>%
   mutate(beer = E310, wine = E313, liquor = E316) %>%
-  mutate(drink_no = rowSums(.[c('beer','wine','liquor')], na.rm=T)) %>%
+  mutate(drink_no = rowSums(.[c('beer','wine','liquor')], na.rm = T)) %>%
   mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
   select(pid, rf_etoh),
 ## lex1_6
@@ -262,3 +270,15 @@ drink_offspring <- list(
   mutate(drink_no = rowSums(.[c('beer','white_wine','red_wine','liquor')], na.rm = T)) %>%
   mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
   select(pid, rf_etoh))
+
+drink_offspring <- bind_rows(drink_offspring, .id = 'exam') %>%
+  mutate(pid = as.character(pid),
+         exam = as.numeric(str_remove(exam,'exam')),
+         rf_etoh = as.numeric(rf_etoh)) %>%
+  arrange(pid, exam) %>% group_by(pid) %>%
+  tidyr::fill(rf_etoh) %>%
+  ungroup()
+
+# Save data -----------------------------------------------------------------------------------
+
+save(drink_origin, drink_offspring, file = 'data/rda/alcohol.rda', compress = T)
