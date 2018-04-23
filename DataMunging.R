@@ -6,6 +6,7 @@
 
 ProjTemplate::reload()
 `%nin%` <- Negate(`%in%`)
+datadir <- set_datadir()
 
 # Matching participation in study with risk factor measurments ------------
 
@@ -219,7 +220,7 @@ meno_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_me
   rename(age_meno = AM2, exam_meno = AM5) %>%
   mutate(early_meno = ifelse(age_meno < 45, 1, 0)) %>%
   mutate_all(as.integer) %>%
-  mutate(PID = as.character(PID)) %>%
+  # mutate(PID = as.character(PID)) %>%
   arrange(PID)
 
 meno_off <- read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','vr_meno_ex07_1_0152d.sas7bdat')) %>%
@@ -248,6 +249,8 @@ bmi_orig <- read_sas(file.path(datadir,'newdat','framcohort','Datasets','bmi.sas
 
 ### Not using BMI from offspring cohort since it is only recorded at exam 2
 
+# Other exposures -----------------------------------------------------------------------------
+
 ## Smoking
 
 source('munging_smoking.R')
@@ -255,3 +258,30 @@ source('munging_smoking.R')
 ## Drinking
 
 source('munging_drinking.R')
+
+
+# putting the datasets together ---------------------------------------------------------------
+
+dat_orig <- dat_attend_orig_exploded %>%
+  left_join(diab_orig) %>%
+  nest(-PID, -sex) %>%
+  left_join(meno_orig, by = "PID") %>%
+  mutate(data = map2(data, age_meno,
+                     function(x,y) { x$meno = ifelse(x$age_cur >= y, 1, 0); return(x)})) %>%
+  select(PID, sex, data, early_meno) %>%
+  unnest() %>%
+  left_join(smoke_orig, by = c('PID' = 'PID', 'exam_no' = 'exam')) %>%
+  left_join(drink_origin, by = c('PID' = 'PID', 'exam_no' = 'exam'))
+
+dat_offspring <- dat_attend_offspring_exploded %>%
+  left_join(diab_off) %>%
+  nest(-PID, -sex) %>%
+  left_join(meno_off %>% mutate(PID = as.numeric(PID)), by = 'PID') %>%
+  mutate(data = map2(data, age_meno,
+                     function(x,y) { x$meno = ifelse(x$age_cur >= y, 1, 0); return(x)})) %>%
+  select(PID, sex, data, early_meno) %>%
+  unnest() %>%
+  left_join(smoke_off, by = c('PID' = 'pid', 'exam_no' = 'exam')) %>%
+  left_join(drink_offspring, by = c('PID' = 'pid', 'exam_no' = 'exam'))
+
+save(dat_orig, dat_offspring, file = 'data/rda/predictors.rda', compress=T)
