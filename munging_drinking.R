@@ -217,7 +217,7 @@ drink_origin <- list(
   select(PID, rf_etoh))
 
 drink_origin <- bind_rows(drink_origin, .id = 'exam') %>%
-  mutate(PID = as.character(PID),
+  mutate(#PID = as.character(PID),
          exam = as.numeric(str_remove(exam,'exam')),
          rf_etoh = as.numeric(rf_etoh)) %>%
   arrange(PID, exam) %>% group_by(PID) %>%
@@ -272,7 +272,7 @@ drink_offspring <- list(
   select(pid, rf_etoh))
 
 drink_offspring <- bind_rows(drink_offspring, .id = 'exam') %>%
-  mutate(pid = as.character(pid),
+  mutate(#pid = as.character(pid),
          exam = as.numeric(str_remove(exam,'exam')),
          rf_etoh = as.numeric(rf_etoh)) %>%
   arrange(pid, exam) %>% group_by(pid) %>%

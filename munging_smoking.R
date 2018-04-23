@@ -223,7 +223,7 @@ smoke_orig <- list(
 
 smoke_orig <- smoke_orig %>%
   bind_rows(.id = 'exam') %>%
-  mutate(PID = as.character(PID),
+  mutate(#PID = as.character(PID),
          exam = as.numeric(str_remove(exam,'exam')),
          smoking = as.numeric(smoking)) %>%
   arrange(PID, exam) %>%
@@ -286,8 +286,7 @@ smoke_off <- list(
                              TRUE ~ 1)) %>%
   select(pid, smoking))
 smoke_off <- smoke_off %>% bind_rows(.id = 'exam') %>%
-  mutate(exam = as.numeric(str_remove(exam, 'exam')),
-         pid = as.character(pid)) %>%
+  mutate(exam = as.numeric(str_remove(exam, 'exam'))) %>%
   arrange(pid, exam) %>%
   group_by(pid) %>%
   tidyr::fill(smoking) %>%
