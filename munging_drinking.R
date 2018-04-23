@@ -218,10 +218,47 @@ drink_origin <- list(
 
 # Offspring cohort -----------------------------------------------------------------------------
 
+datadir <- file.path(set_datadir(), 'archives','framoffspring','Datasets')
+drink_offspring <- list(
 ## lex1_1
+'exam1' = read_sas(file.path(datadir, 'lex1_1.sas7bdat')) %>% select(pid, A111:A113) %>%
+  mutate(beer = A111, wine = A112, liquor =A113) %>%
+  mutate(drink_no = rowSums(.[c('beer','wine','liquor')], na.rm=T)) %>%
+  mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
+  select(pid, rf_etoh),
 ## lex1_2v2
+'exam2' = read_sas(file.path(datadir, 'lex1_2v2.sas7bdat')) %>% select(pid, B117:B119) %>%
+  mutate(beer = B117, wine = B118, liquor = B119) %>%
+  mutate(drink_no = rowSums(.[c('beer','wine','liquor')], na.rm=T)) %>%
+  mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
+  select(pid, rf_etoh),
 ## lex1_3
+'exam3' = read_sas(file.path(datadir, 'lex1_3.sas7bdat')) %>% select(pid, C83, C86, C89) %>%
+  mutate(beer = C83, wine = C86, liquor = C89) %>%
+  mutate(drink_no = rowSums(.[c('beer','wine','liquor')], na.rm=T)) %>%
+  mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
+  select(pid, rf_etoh),
 ## lex1_4
+'exam4' = read_sas(file.path(datadir, 'lex1_4.sas7bdat')) %>% select(pid, D082, D085, D088) %>%
+  mutate(beer = D082, wine = D085, liquor = D088) %>%
+  mutate(drink_no = rowSums(.[c('beer','wine','liquor')], na.rm=T)) %>%
+  mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
+  select(pid, rf_etoh),
 ## lex1_5
+'exam5' = read_sas(file.path(datadir, 'lex1_5.sas7bdat')) %>% select(pid, E310, E313, E316) %>%
+  mutate(beer = E310, wine = E313, liquor = E316) %>%
+  mutate(drink_no = rowSums(.[c('beer','wine','liquor')], na.rm=T)) %>%
+  mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
+  select(pid, rf_etoh),
 ## lex1_6
+'exam6' = read_sas(file.path(datadir, 'lex1_6.sas7bdat')) %>% select(pid, F276, F279, F282, F285) %>%
+  mutate(beer = F276, white_wine = F279, red_wine = F282, liquor = F285) %>%
+  mutate(drink_no = rowSums(.[c('beer','white_wine','red_wine','liquor')], na.rm=T)) %>%
+  mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
+  select(pid, rf_etoh),
 ## lex1_7
+'exam7' = read_sas(file.path(datadir, 'lex1_7.sas7bdat')) %>% select(pid, G104, G107, G110, G113) %>%
+  mutate(beer = G104, white_wine = G107, red_wine = G110, liquor = G113) %>%
+  mutate(drink_no = rowSums(.[c('beer','white_wine','red_wine','liquor')], na.rm = T)) %>%
+  mutate(rf_etoh = ifelse(drink_no > 21, 1, 0)) %>% # per week
+  select(pid, rf_etoh))
