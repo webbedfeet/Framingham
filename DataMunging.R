@@ -78,7 +78,7 @@ dat_attend_orig <- d11 %>%
   select(-data) %>%
   left_join(first_fracture_orig) %>%
   mutate(
-    end_duration = ifelse(is.na(YrFrac), end_yr, YrFrac), # Stop time at first fracture
+    end_duration = ifelse(YrFrac - end_yr <= 2, YrFrac, end_yr), # Stop time at first fracture or last visit, to within 2 years
     frac_indic = ifelse(is.na(YrFrac), 0, 1),
     year1 = start_yr,
     no_yrs = end_duration - start_yr + 1
@@ -150,20 +150,22 @@ death_off <-  read_sas(file.path(datadir, 'newdat','framoffspring','Datasets','v
 
 tmp <- dat_attend_orig %>%
   select(PID, start_yr, end_yr) %>%
-  mutate(start_dt = as.Date(paste0(as.character(start_yr),'-07-01'))) %>%
+  mutate(start_dt = as.Date(paste0(as.character(start_yr),'-01-01'))) %>%
   left_join(death_orig) %>%
-  mutate(death_dt = (start_dt + datedth)) %>%
-  select(PID, start_dt, DTHRVWD, datedth, death_dt) %>%
+  mutate(death_dt = (start_dt + datedth),
+         last_dt = (start_dt + lastatt)) %>%
+  select(PID, start_dt, DTHRVWD, datedth, death_dt, lastatt, last_dt) %>%
   rename(death_indic = DTHRVWD, death_date = datedth)
 dat_attend_orig <- dat_attend_orig %>% left_join(tmp)
 
 
 tmp <- dat_attend_offspring %>%
   select(PID, start_yr, end_yr) %>%
-  mutate(start_dt = as.Date(paste0(as.character(start_yr),'-07-01'))) %>%
+  mutate(start_dt = as.Date(paste0(as.character(start_yr),'-01-01'))) %>%
   left_join(death_off) %>%
-  mutate(death_dt = (start_dt + datedth)) %>%
-  select(PID, start_dt, DTHRVWD, datedth, death_dt) %>%
+  mutate(death_dt = (start_dt + datedth),
+         last_dt = (start_dt + lastatt)) %>%
+  select(PID, start_dt, DTHRVWD, datedth, death_dt, lastatt, last_dt) %>%
   rename(death_indic = DTHRVWD, death_date = datedth)
 dat_attend_offspring <- dat_attend_offspring %>% left_join(tmp)
 
@@ -185,6 +187,13 @@ d31 %>%
 dat_attend_offspring_exploded %<>% left_join(bl, by = c('PID' = 'PID', 'yrs' = 'exam_yr')) %>% tidyr::fill(exam_no)
 
 save(dat_attend_offspring, dat_attend_offspring_exploded, dat_attend_orig, dat_attend_orig_exploded, file = 'data/rda/TimeAndFractures.rda', compress=T)
+
+
+# Some person-years computations --------------------------------------------------------------
+
+dat_attend_orig <- dat_attend_orig %>%
+  mutate(frac_dt = start_dt + fxdate,
+         end_dt = pmin(frac_dt, last_dt, na.rm = T))
 
 # Risk factors by exam ------------------------------------------------------------------------
 
@@ -285,3 +294,22 @@ dat_offspring <- dat_attend_offspring_exploded %>%
   left_join(drink_offspring, by = c('PID' = 'pid', 'exam_no' = 'exam'))
 
 save(dat_orig, dat_offspring, file = 'data/rda/predictors.rda', compress=T)
+
+
+# Figuring out person-time --------------------------------------------------------------------
+
+exams_person <-  d11 %>% select(PID, starts_with('date')) %>%
+  gather(exam, days, -PID) %>%
+  mutate(exam = as.numeric(str_remove(exam, 'date'))) %>%
+  right_join(
+    d11 %>% select(PID, starts_with('exam')) %>%
+      gather(exam, year, -PID) %>%
+      mutate(exam = as.numeric(str_remove(exam, 'examyr')))
+  ) %>%
+  arrange(PID, exam) %>%
+  mutate(days = ifelse(exam==1, 0, days)) %>%
+  filter(!is.na(days)) %>%
+  group_by(PID) %>%
+  mutate(computed_dt = as.Date(paste0(as.character(min(year)),'-01-01')) + days) %>%
+  mutate(computed_yr = lubridate::year(computed_dt))
+  ungroup()
