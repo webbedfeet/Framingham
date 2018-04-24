@@ -99,3 +99,13 @@ There are summaries of diabetes, menopause, and medication that can be useful.
 Events and ascertainment of menopause status, diabetes status are done in `DataMunging.R`. The 
 parsing of documentation to determine smoking status and alcohol consumption is done. We now need to 
 identify the particular variables for each available exam to extract to get this information. 
+
+# Mon Apr 23 23:29:23 2018 
+
+One of the challenges we are faced with is in getting the right person-time for each person. There
+are several people where the recorded fracture time is well beyond (even over 20 years) after the last
+exam. Extrapolating predictors to that extent is not desirable, so I decided to censor individuals 
+at the earlier of 2 years after  the last exam, and the fracture date.
+
+
+

@@ -64,6 +64,17 @@ first_fracture_orig <- d21 %>%
   select(PID, fxdate, YrFrac) %>%
   distinct()
 
+#' # Mon Apr 23 23:45:13 2018
+#' We will assume that all individuals started their time in the study on January 1st of the year
+#' of their first exam. Starting from that assumption, we can compute the dates of each exam, as
+#' well as their final end date. This is what we should  use for all our computations. The degree
+#' of error with this approach is minimal. We can then compute the person times, based on end times
+#' being the minimum of the fracture date, the death date and 2 years after the last exam date. This
+#' is the extent of the extrapolation we'll deal with in this study.
+
+# TODO: Fix the final date for each person, both for year and date
+# TODO: Compute person-years by calendar year
+
 dat_attend_orig <- d11 %>%
   select(PID, age1, sex, starts_with("examyr")) %>% # Work with calendar time
   gather(visit, yr, -PID, -age1, -sex) %>%
@@ -78,7 +89,8 @@ dat_attend_orig <- d11 %>%
   select(-data) %>%
   left_join(first_fracture_orig) %>%
   mutate(
-    end_duration = ifelse(YrFrac - end_yr <= 2, YrFrac, end_yr), # Stop time at first fracture or last visit, to within 2 years
+    end_duration = ifelse(YrFrac - end_yr <= 2, YrFrac, end_yr + 2),
+    end_dt = ifelse(YrFrac - end_yr <= 2, fxdate, ), # Stop time at first fracture or last visit, to within 2 years
     frac_indic = ifelse(is.na(YrFrac), 0, 1),
     year1 = start_yr,
     no_yrs = end_duration - start_yr + 1
