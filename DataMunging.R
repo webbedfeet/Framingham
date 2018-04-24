@@ -75,6 +75,34 @@ first_fracture_orig <- d21 %>%
 # TODO: Fix the final date for each person, both for year and date
 # TODO: Compute person-years by calendar year
 
+
+# Figuring out person-time --------------------------------------------------------------------
+
+exams_person <-  d11 %>% select(PID, starts_with('date')) %>%
+  gather(exam, days, -PID) %>%
+  mutate(exam = as.numeric(str_remove(exam, 'date'))) %>%
+  right_join(
+    d11 %>% select(PID, starts_with('exam')) %>%
+      gather(exam, year, -PID) %>%
+      mutate(exam = as.numeric(str_remove(exam, 'examyr')))
+  ) %>%
+  arrange(PID, exam) %>%
+  mutate(days = ifelse(exam==1, 0, days)) %>%
+  filter(!is.na(days)) %>%
+  group_by(PID) %>%
+  mutate(computed_dt = as.Date(paste0(as.character(min(year)),'-01-01')) + days) %>%
+  mutate(computed_yr = lubridate::year(computed_dt))
+ungroup()
+
+bl <- exams_person %>% group_by(PID) %>% summarize(start_yr = min(year(computed_dt)),
+                                                   end_yr = max(year(computed_dt)),
+                                                   no_yrs = length(seq(start_yr, end_yr)),
+                                                   max_days = max(days),
+                                                   end_dt = max(computed_dt))
+# integrating fracture data -------------------------------------------------------------------
+
+## Original cohort
+
 dat_attend_orig <- d11 %>%
   select(PID, age1, sex, starts_with("examyr")) %>% # Work with calendar time
   gather(visit, yr, -PID, -age1, -sex) %>%
@@ -89,8 +117,8 @@ dat_attend_orig <- d11 %>%
   select(-data) %>%
   left_join(first_fracture_orig) %>%
   mutate(
-    end_duration = ifelse(YrFrac - end_yr <= 2, YrFrac, end_yr + 2),
-    end_dt = ifelse(YrFrac - end_yr <= 2, fxdate, ), # Stop time at first fracture or last visit, to within 2 years
+    end_duration = ifelse(!is.na(YrFrac) &  (YrFrac - end_yr <= 2), YrFrac, end_yr + 2),
+    # end_dt = ifelse(YrFrac - end_yr <= 2, fxdate, end_dt + (365*2)), # Stop time at first fracture or last visit, to within 2 years
     frac_indic = ifelse(is.na(YrFrac), 0, 1),
     year1 = start_yr,
     no_yrs = end_duration - start_yr + 1
@@ -112,6 +140,8 @@ dat_attend_orig_exploded <-
 ## Offspring cohort
 d31 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_offspring.sas7bdat"))
 d41 <- read_sas(file.path(datadir, "sas", "vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat"))
+
+# TODO: Add code for person-time computations in offspring cohort
 
 dat_attend_offspring <- d31 %>%
   select(PID, age1, sex, starts_with("examyr")) %>%
@@ -308,20 +338,3 @@ dat_offspring <- dat_attend_offspring_exploded %>%
 save(dat_orig, dat_offspring, file = 'data/rda/predictors.rda', compress=T)
 
 
-# Figuring out person-time --------------------------------------------------------------------
-
-exams_person <-  d11 %>% select(PID, starts_with('date')) %>%
-  gather(exam, days, -PID) %>%
-  mutate(exam = as.numeric(str_remove(exam, 'date'))) %>%
-  right_join(
-    d11 %>% select(PID, starts_with('exam')) %>%
-      gather(exam, year, -PID) %>%
-      mutate(exam = as.numeric(str_remove(exam, 'examyr')))
-  ) %>%
-  arrange(PID, exam) %>%
-  mutate(days = ifelse(exam==1, 0, days)) %>%
-  filter(!is.na(days)) %>%
-  group_by(PID) %>%
-  mutate(computed_dt = as.Date(paste0(as.character(min(year)),'-01-01')) + days) %>%
-  mutate(computed_yr = lubridate::year(computed_dt))
-  ungroup()
