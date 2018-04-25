@@ -7,7 +7,6 @@
 # Setup ---------------------------------------------------------------------------------------
 
 ProjTemplate::reload()
-`%nin%` <- Negate(`%in%`)
 datadir <- set_datadir()
 
 # Matching participation in study with risk factor measurments ------------
@@ -110,13 +109,13 @@ first_frac_orig <- d21 %>%
   group_by(PID) %>%
   filter(fxdate == min(fxdate)) %>%
   ungroup() %>%
-  select(PID, fxdate)
+  select(PID, fxdate) %>% distinct()
 
 dat_exams_duration_orig <- dat_exams_duration_orig %>%
   left_join(first_frac_orig) %>%
   mutate(last_exam_dt = ymd(paste0(start_yr,'0101'))+last_exam_day,
          fx_dt = ymd(paste0(start_yr, '0101')) + fxdate) %>%
-  filter(is.na(fx_dt) | year(fx_dt) >= start_yr | year(fx_dt) <= year(last_exam_dt) + 2) %>%
+  filter(is.na(fx_dt) | (year(fx_dt) >= start_yr & year(fx_dt) <= year(last_exam_dt) + 2)) %>%
   mutate(end_dt = pmax(last_exam_dt %m+% years(2), fx_dt, na.rm = T)) %>%
   mutate(end_yr = year(end_dt),
          dec_end_yr = decimal_date(end_dt)) %>%
@@ -143,56 +142,82 @@ dat_years_orig <- dat_exams_duration_orig %>% select(PID, start_yr, end_yr) %>%
   left_join(dat_exams_orig %>% select(PID, exam, exam_yr), by = c('PID'='PID','years' = 'exam_yr')) %>%
   group_by(PID) %>% fill(exam) %>% ungroup()
 
-
 ## Offspring cohort
+
+#' The requirements for creating the event/feature/time dataset are that we compute the
+#' actual years in the study, identify events within the duration of examinations (to within
+#' two years of the last exam), and for each individual, create a record for each calendar year
+#' in the study, using LVCF to fill in the feature information. This should be repeatable for the
+#' offspring cohort since most files have similar formats and variable names.
+#'
+
+## Gather times of exams, along with initial age and gender
+
+
 d31 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_offspring.sas7bdat"))
 d41 <- read_sas(file.path(datadir, "sas", "vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat"))
 
+dat_exams_off <- d31 %>%
+  select(PID, age1, sex, examyr1, starts_with('date')) %>%
+  gather(exam, dt, starts_with('date')) %>%
+  rename('start_yr' = 'examyr1') %>%
+  mutate(exam = str_remove(exam, 'date')) %>%
+  right_join(d31 %>%
+               select(PID, age1, sex, starts_with('examyr')) %>%
+               gather(exam, exam_yr, starts_with('examyr')) %>%
+               mutate(exam = str_remove(exam, 'examyr')),
+             by = c("PID", "exam", 'age1','sex')) %>%
+  mutate(exam = as.numeric(exam)) %>%
+  mutate(start_yr = ifelse(exam==1, exam_yr, start_yr),
+         dt = ifelse(exam==1, 0, dt)) %>%
+  filter(!is.na(dt)) %>%
+  arrange(PID, exam)
 
-dat_attend_offspring <- d31 %>%
-  select(PID, age1, sex, starts_with("examyr")) %>%
-  gather(exam, yr, starts_with("examyr")) %>%
-  separate(exam, c("label", "exam_no"), sep = 6, convert = T) %>%
-  select(-label) %>%
-  filter(!is.na(yr)) %>%
-  nest(exam_no, yr) %>%
-  mutate(start_yr = map_dbl(data, ~min(.$yr))) %>%
-  mutate(end_yr = map_dbl(data, ~max(.$yr))) %>%
+## Summarize the duration of exams per individual
+
+dat_exams_duration_off <- dat_exams_off %>%
+  nest(exam, dt, exam_yr) %>%
+  mutate(last_exam_day = map_dbl(data, ~max(.$dt))) %>%
   select(-data)
 
-first_fracture_offspring <- d41 %>%
-  filter(of_FxSite == 1) %>%
+first_frac_off <- d41 %>%
   group_by(PID) %>%
-  filter(of_fxdate == min(of_fxdate, na.rm = T)) %>%
+  filter(of_fxdate == min(of_fxdate)) %>%
   ungroup() %>%
-  select(PID, of_fxdate, YrFrac) %>%
-  rename('fxdate'='of_fxdate') %>%
-  left_join(dat_attend_offspring %>% select(PID, start_yr, end_yr)) %>%
-  filter(YrFrac >= start_yr | YrFrac <= end_yr + 2)
+  select(PID, of_fxdate) %>% distinct() %>%
+  rename(fxdate = of_fxdate)
 
-ptime_offspring <- ptime(d31, first_fracture_offspring)
+dat_exams_duration_off <- dat_exams_duration_off %>%
+  left_join(first_frac_off) %>%
+  mutate(last_exam_dt = ymd(paste0(start_yr,'0101')) + last_exam_day,
+         fx_dt = ymd(paste0(start_yr, '0101')) + fxdate) %>%
+  filter(is.na(fx_dt) | (year(fx_dt) >= start_yr & year(fx_dt) <= year(last_exam_dt) + 2)) %>% # Only fracs during exam period are counted
+  mutate(end_dt = pmin(last_exam_dt %m+% years(2), fx_dt, na.rm = T)) %>%
+  mutate(end_yr = year(end_dt),
+         dec_end_yr = decimal_date(end_dt)) %>%
+  distinct()
 
-dat_attend_offspring <- dat_attend_offspring %>%
-  left_join(first_fracture_offspring) %>%
-  mutate(frac_ind = ifelse(is.na(YrFrac), 0, 1)) %>%
-  filter((is.na(YrFrac) | ((YrFrac >= start_yr) & (YrFrac <= end_yr + 2)))) %>% # Only accept fractures happening during the duration of exams
-  distinct() %>%
-  mutate(
-    end_duration = pmin(end_yr, YrFrac, na.rm = T),
-    no_yrs = end_duration - start_yr + 1
-  )
+## Create year-based dataset
 
-dat_attend_offspring_exploded <- dat_attend_offspring[rep(seq_len(nrow(dat_attend_offspring)), dat_attend_offspring$no_yrs), ] %>%
-  select(-no_yrs) %>%
-  nest(age1, start_yr:end_duration) %>%
-  mutate(data = map(data, ~ .x %>%
-    mutate(
-      yrs = unique(start_yr) + seq_len(nrow(.x)) - 1,
-      frac_indic = ifelse(!is.na(YrFrac) & YrFrac == yrs, 1, 0),
-      age_cur = unique(age1) + seq_len(nrow(.x)) - 1
-    ))) %>%
+dat_years_off <- dat_exams_duration_off %>% select(PID, start_yr, end_yr) %>%
+  mutate(years = map2(start_yr, end_yr, ~seq(.x, .y))) %>%
+  select(PID, years) %>%
   unnest() %>%
-  select(PID:sex, yrs, frac_indic, age_cur)
+  left_join(dat_exams_duration_off %>% select(PID, age1, sex, start_yr, end_dt)) %>% # subject-based data
+  group_by(PID) %>%
+  mutate(age = age1 + years - min(years)) %>% # Age in each year
+  ungroup() %>%
+  select(-age1) %>%
+  left_join(dat_exams_duration_off %>% filter(!is.na(fx_dt)) %>% mutate(years = year(fx_dt)) %>%
+              select(PID, years, fx_dt),
+            by = c("PID",'years')) %>% # Grab fracture dates
+  mutate(pyears = 1) %>%
+  mutate(pyears = ifelse(years != year(end_dt), pyears, decimal_date(end_dt) - years),
+         fx_status = ifelse(is.na(fx_dt), 0,1)) %>% # Compute person years exposed, and fracture status
+  # add last exam number for each year
+  left_join(dat_exams_off %>% select(PID, exam, exam_yr), by = c('PID'='PID','years' = 'exam_yr')) %>%
+  group_by(PID) %>% fill(exam) %>% ungroup()
+
 
 
 # Death -------------------------------------------------------------------
