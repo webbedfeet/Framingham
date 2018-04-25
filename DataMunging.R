@@ -219,7 +219,8 @@ dat_years_off <- dat_exams_duration_off %>% select(PID, start_yr, end_yr) %>%
   group_by(PID) %>% fill(exam) %>% ungroup()
 
 
-
+save(dat_years_off, dat_years_orig, dat_exams_duration_off, dat_exams_duration_orig,
+     dat_exams_orig, dat_exams_off, file = 'data/rda/updatedEventsPY.rda', compress = T)
 # Death -------------------------------------------------------------------
 
 death_orig <- read_sas(file.path(datadir, 'newdat','framcohort','Datasets','vr_survdth_2011_m_0786d.sas7bdat'))
