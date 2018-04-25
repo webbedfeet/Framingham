@@ -59,6 +59,19 @@ datadir <- set_datadir()
 d11 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_fram.sas7bdat"))
 d21 <- read_sas(file.path(datadir, "sas", "vr_fxrev_2012_0_0746d_yr_fram.sas7bdat"))
 
+dat_attend_orig <- d11 %>%
+  select(PID, age1, sex, starts_with("examyr")) %>% # Work with calendar time
+  gather(visit, yr, -PID, -age1, -sex) %>%
+  separate(visit, c("label", "visit_no"), sep = 6, convert = T) %>% # Extracts exam number
+  select(-label) %>%
+  filter(!is.na(yr)) %>% # The ones missing are the ones that weren't seen at that exam
+  nest(visit_no, yr) %>% # Stratify on exam, calendar year
+  mutate(
+    start_yr = map_dbl(data, ~min(.$yr)),
+    end_yr = map_dbl(data, ~max(.$yr))
+  ) %>% # Identify period that subject is in study
+  select(-data)
+
 first_fracture_orig <- d21 %>%
   group_by(PID) %>%
   filter(fxdate == min(fxdate)) %>%
@@ -73,7 +86,6 @@ first_fracture_orig <- d21 %>%
 #' of error with this approach is minimal. We can then compute the person times, based on end times
 #' being the minimum of the fracture date, the death date and 2 years after the last exam date. This
 #' is the extent of the extrapolation we'll deal with in this study.
-
 
 
 # Figuring out person-time --------------------------------------------------------------------
@@ -140,14 +152,16 @@ first_fracture_offspring <- d41 %>%
   filter(of_fxdate == min(of_fxdate, na.rm = T)) %>%
   ungroup() %>%
   select(PID, of_fxdate, YrFrac) %>%
-  rename('fxdate'='of_fxdate')
+  rename('fxdate'='of_fxdate') %>%
+  left_join(dat_attend_offspring %>% select(PID, start_yr, end_yr)) %>%
+  filter(YrFrac >= start_yr | YrFrac <= end_yr + 2)
 
 ptime_offspring <- ptime(d31, first_fracture_offspring)
 
 dat_attend_offspring <- dat_attend_offspring %>%
   left_join(first_fracture_offspring) %>%
   mutate(frac_ind = ifelse(is.na(YrFrac), 0, 1)) %>%
-  filter((is.na(YrFrac) | ((YrFrac >= start_yr) & (YrFrac <= end_yr)))) %>% # Only accept fractures happening during the duration of exams
+  filter((is.na(YrFrac) | ((YrFrac >= start_yr) & (YrFrac <= end_yr + 2)))) %>% # Only accept fractures happening during the duration of exams
   distinct() %>%
   mutate(
     end_duration = pmin(end_yr, YrFrac, na.rm = T),
