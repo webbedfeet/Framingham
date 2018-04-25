@@ -59,25 +59,6 @@ datadir <- set_datadir()
 d11 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_fram.sas7bdat"))
 d21 <- read_sas(file.path(datadir, "sas", "vr_fxrev_2012_0_0746d_yr_fram.sas7bdat"))
 
-dat_attend_orig <- d11 %>%
-  select(PID, age1, sex, starts_with("examyr")) %>% # Work with calendar time
-  gather(visit, yr, -PID, -age1, -sex) %>%
-  separate(visit, c("label", "visit_no"), sep = 6, convert = T) %>% # Extracts exam number
-  select(-label) %>%
-  filter(!is.na(yr)) %>% # The ones missing are the ones that weren't seen at that exam
-  nest(visit_no, yr) %>% # Stratify on exam, calendar year
-  mutate(
-    start_yr = map_dbl(data, ~min(.$yr)),
-    end_yr = map_dbl(data, ~max(.$yr))
-  ) %>% # Identify period that subject is in study
-  select(-data)
-
-first_fracture_orig <- d21 %>%
-  group_by(PID) %>%
-  filter(fxdate == min(fxdate)) %>%
-  ungroup() %>%
-  select(PID, fxdate, YrFrac) %>%
-  distinct()
 
 #' # Mon Apr 23 23:45:13 2018
 #' We will assume that all individuals started their time in the study on January 1st of the year
@@ -88,13 +69,76 @@ first_fracture_orig <- d21 %>%
 #' is the extent of the extrapolation we'll deal with in this study.
 
 
-# Figuring out person-time --------------------------------------------------------------------
-
-pyears_orig <- ptime(d11, first_fracture_orig)
-
 # integrating fracture data -------------------------------------------------------------------
 
 ## Original cohort
+
+#' The requirements for creating the event/feature/time dataset are that we compute the
+#' actual years in the study, identify events within the duration of examinations (to within
+#' two years of the last exam), and for each individual, create a record for each calendar year
+#' in the study, using LVCF to fill in the feature information. This should be repeatable for the
+#' offspring cohort since most files have similar formats and variable names.
+#'
+
+## Gather times of exams, along with initial age and gender
+dat_exams_orig <- d11 %>%
+  select(PID, age1, sex, examyr1, starts_with('date')) %>%
+  gather(exam, dt, starts_with('date')) %>%
+  rename('start_yr' = 'examyr1') %>%
+  mutate(exam = str_remove(exam, 'date')) %>%
+  right_join(d11 %>%
+               select(PID, age1, sex, starts_with('examyr')) %>%
+               gather(exam, exam_yr, starts_with('examyr')) %>%
+               mutate(exam = str_remove(exam, 'examyr')),
+             by = c("PID", "exam", 'age1','sex')) %>%
+  mutate(exam = as.numeric(exam)) %>%
+  mutate(start_yr = ifelse(exam==1, exam_yr, start_yr),
+         dt = ifelse(exam==1, 0, dt)) %>%
+  filter(!is.na(dt)) %>%
+  arrange(PID, exam)
+
+## Summarize the duration of exams per individual
+
+dat_exams_duration_orig <- dat_exams_orig %>%
+  nest(exam, dt, exam_yr) %>%
+  mutate(last_exam_day = map_dbl(data, ~max(.$dt))) %>%
+  select(-data)
+
+## Add date of first fracture, since this determines the end of follow-up
+
+first_frac_orig <- d21 %>%
+  group_by(PID) %>%
+  filter(fxdate == min(fxdate)) %>%
+  ungroup() %>%
+  select(PID, fxdate)
+
+dat_exams_duration_orig <- dat_exams_duration_orig %>%
+  left_join(first_frac_orig) %>%
+  mutate(last_exam_dt = ymd(paste0(start_yr,'0101'))+last_exam_day,
+         fx_dt = ymd(paste0(start_yr, '0101')) + fxdate) %>%
+  filter(is.na(fx_dt) | year(fx_dt) >= start_yr | year(fx_dt) <= year(last_exam_dt) + 2) %>%
+  mutate(end_dt = pmax(last_exam_dt %m+% years(2), fx_dt, na.rm = T)) %>%
+  mutate(end_yr = year(end_dt),
+         dec_end_yr = decimal_date(end_dt)) %>%
+  distinct()
+
+## Create year-based dataset
+
+dat_years_orig <- dat_exams_duration_orig %>% select(PID, start_yr, end_yr) %>%
+  mutate(years = map2(start_yr, end_yr, ~seq(.x, .y))) %>%
+  select(PID, years) %>%
+  unnest() %>%
+  left_join(dat_exams_duration_orig %>% select(PID, age1, sex, start_yr, end_dt)) %>% # subject-based data
+  group_by(PID) %>%
+  mutate(age = age1 + years - min(years)) %>% # Age in each year
+  ungroup() %>%
+  select(-age1) %>%
+  left_join(dat_exams_duration_orig %>% filter(!is.na(fx_dt)) %>% mutate(years = year(fx_dt)) %>%
+              select(PID, years, fx_dt),
+            by = c("PID",'years')) %>% # Grab fracture dates
+  mutate(pyears = ifelse(years != year(end_dt), pyears, decimal_date(end_dt) - years),
+         fx_status = ifelse(is.na(fx_dt), 0,1)) # Compute person years exposed, and fracture status
+
 
 dat_attend_orig <- d11 %>%
   select(PID, age1, sex, starts_with("examyr")) %>% # Work with calendar time
