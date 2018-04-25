@@ -136,43 +136,13 @@ dat_years_orig <- dat_exams_duration_orig %>% select(PID, start_yr, end_yr) %>%
   left_join(dat_exams_duration_orig %>% filter(!is.na(fx_dt)) %>% mutate(years = year(fx_dt)) %>%
               select(PID, years, fx_dt),
             by = c("PID",'years')) %>% # Grab fracture dates
+  mutate(pyears = 1) %>%
   mutate(pyears = ifelse(years != year(end_dt), pyears, decimal_date(end_dt) - years),
-         fx_status = ifelse(is.na(fx_dt), 0,1)) # Compute person years exposed, and fracture status
+         fx_status = ifelse(is.na(fx_dt), 0,1)) %>% # Compute person years exposed, and fracture status
+  # add last exam number for each year
+  left_join(dat_exams_orig %>% select(PID, exam, exam_yr), by = c('PID'='PID','years' = 'exam_yr')) %>%
+  group_by(PID) %>% fill(exam) %>% ungroup()
 
-
-dat_attend_orig <- d11 %>%
-  select(PID, age1, sex, starts_with("examyr")) %>% # Work with calendar time
-  gather(visit, yr, -PID, -age1, -sex) %>%
-  separate(visit, c("label", "visit_no"), sep = 6, convert = T) %>% # Extracts exam number
-  select(-label) %>%
-  filter(!is.na(yr)) %>% # The ones missing are the ones that weren't seen at that exam
-  nest(visit_no, yr) %>% # Stratify on exam, calendar year
-  mutate(
-    start_yr = map_dbl(data, ~min(.$yr)),
-    end_yr = map_dbl(data, ~max(.$yr))
-  ) %>% # Identify period that subject is in study
-  select(-data) %>%
-  left_join(first_fracture_orig) %>%
-  mutate(
-    end_duration = ifelse(!is.na(YrFrac) &  (YrFrac - end_yr <= 2), YrFrac, end_yr + 2),
-    # end_dt = ifelse(YrFrac - end_yr <= 2, fxdate, end_dt + (365*2)), # Stop time at first fracture or last visit, to within 2 years
-    frac_indic = ifelse(is.na(YrFrac), 0, 1),
-    year1 = start_yr,
-    no_yrs = end_duration - start_yr + 1
-  )
-
-dat_attend_orig_exploded <-
-  dat_attend_orig[rep(seq_len(nrow(dat_attend_orig)), dat_attend_orig$no_yrs), ] %>%
-  select(-no_yrs) %>%
-  nest(age1, start_yr:year1) %>%
-  mutate(data = map(data, ~ .x %>%
-    mutate(
-      yrs = unique(start_yr) + seq_len(nrow(.x)) - 1,
-      frac_indic = ifelse(!is.na(YrFrac) & YrFrac == yrs, 1, 0),
-      age_cur = unique(age1) + seq_len(nrow(.x)) - 1
-    ))) %>%
-  unnest() %>%
-  select(PID:sex, yrs, frac_indic, age_cur)
 
 ## Offspring cohort
 d31 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_offspring.sas7bdat"))
