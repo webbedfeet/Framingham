@@ -1,3 +1,14 @@
+#' ptime
+#'
+#' ptime computes the person-time contributed per year in the study by each individual
+#'
+#' @param d A data.frame object from the SAS file containing exam information
+#' @param first_frac A data.frame object containing the date of first fracture for subjects
+#'
+#' @return A data.frame/tibble with three columns: PID, year, and pyears.
+#' @export
+#'
+#' @examples
 ptime <- function(d, first_frac) {
   d %>% select(PID, starts_with('date')) %>%
     gather(exam, days, -PID) %>%
@@ -8,7 +19,7 @@ ptime <- function(d, first_frac) {
         mutate(exam = as.numeric(str_remove(exam, 'examyr')))
     ) %>%
     arrange(PID, exam) %>%
-    mutate(days = ifelse(exam==1, 0, days)) %>%
+    mutate(days = ifelse(exam == 1, 0, days)) %>%
     filter(!is.na(days)) %>%
     group_by(PID) %>%
     mutate(computed_dt = as.Date(paste0(as.character(min(year)),'-01-01')) + days) %>%
