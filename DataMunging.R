@@ -4,6 +4,8 @@
 #                                                          #
 ## %######################################################%##
 
+# Setup ---------------------------------------------------------------------------------------
+
 ProjTemplate::reload()
 `%nin%` <- Negate(`%in%`)
 datadir <- set_datadir()
@@ -72,33 +74,12 @@ first_fracture_orig <- d21 %>%
 #' being the minimum of the fracture date, the death date and 2 years after the last exam date. This
 #' is the extent of the extrapolation we'll deal with in this study.
 
-# TODO: Fix the final date for each person, both for year and date
-# TODO: Compute person-years by calendar year
 
 
 # Figuring out person-time --------------------------------------------------------------------
 
-exams_person <-  d11 %>% select(PID, starts_with('date')) %>%
-  gather(exam, days, -PID) %>%
-  mutate(exam = as.numeric(str_remove(exam, 'date'))) %>%
-  right_join(
-    d11 %>% select(PID, starts_with('exam')) %>%
-      gather(exam, year, -PID) %>%
-      mutate(exam = as.numeric(str_remove(exam, 'examyr')))
-  ) %>%
-  arrange(PID, exam) %>%
-  mutate(days = ifelse(exam==1, 0, days)) %>%
-  filter(!is.na(days)) %>%
-  group_by(PID) %>%
-  mutate(computed_dt = as.Date(paste0(as.character(min(year)),'-01-01')) + days) %>%
-  mutate(computed_yr = lubridate::year(computed_dt))
-ungroup()
+pyears_orig <- ptime(d11, first_fracture_orig)
 
-bl <- exams_person %>% group_by(PID) %>% summarize(start_yr = min(year(computed_dt)),
-                                                   end_yr = max(year(computed_dt)),
-                                                   no_yrs = length(seq(start_yr, end_yr)),
-                                                   max_days = max(days),
-                                                   end_dt = max(computed_dt))
 # integrating fracture data -------------------------------------------------------------------
 
 ## Original cohort
@@ -141,7 +122,6 @@ dat_attend_orig_exploded <-
 d31 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_offspring.sas7bdat"))
 d41 <- read_sas(file.path(datadir, "sas", "vr_fxrev_2012_1_0747d_yr_offspring.sas7bdat"))
 
-# TODO: Add code for person-time computations in offspring cohort
 
 dat_attend_offspring <- d31 %>%
   select(PID, age1, sex, starts_with("examyr")) %>%
@@ -159,7 +139,10 @@ first_fracture_offspring <- d41 %>%
   group_by(PID) %>%
   filter(of_fxdate == min(of_fxdate, na.rm = T)) %>%
   ungroup() %>%
-  select(PID, of_fxdate, YrFrac)
+  select(PID, of_fxdate, YrFrac) %>%
+  rename('fxdate'='of_fxdate')
+
+ptime_offspring <- ptime(d31, first_fracture_offspring)
 
 dat_attend_offspring <- dat_attend_offspring %>%
   left_join(first_fracture_offspring) %>%
