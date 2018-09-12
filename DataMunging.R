@@ -346,6 +346,6 @@ dat_offspring <- dat_attend_offspring_exploded %>%
   left_join(smoke_off, by = c('PID' = 'pid', 'exam_no' = 'exam')) %>%
   left_join(drink_offspring, by = c('PID' = 'pid', 'exam_no' = 'exam'))
 
-save(dat_orig, dat_offspring, file = 'data/rda/predictors.rda', compress=T)
+save(dat_orig, dat_offspring, file = 'data/rda/predictors.rda', compress = T)
 
 
