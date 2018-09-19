@@ -1,0 +1,204 @@
+---
+title: "Framingham Original Cohort (Females)"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dygraphs)
+ProjTemplate::reload()
+load('data/rda/TimeAndFractures.rda') # Data with fracture time, and death time
+load('data/rda/predictors.rda') # Data with predictors
+dat_annual_orig <- dat_attend_orig %>% filter(!is.na(YrFrac)) %>%
+  nest(-PID) %>%
+  mutate(yrs_5yr_risk = map(data, ~seq(.$YrFrac-4, .$YrFrac))) %>%
+  select(-data) %>%
+  unnest() %>%
+  mutate(risk_5yr = 1) %>%
+  right_join(dat_orig,
+             by = c('PID' = 'PID', 'yrs_5yr_risk' = 'yrs')) %>%
+  mutate(risk_5yr = ifelse(is.na(risk_5yr), 0, 1)) %>%
+  rename(yrs = yrs_5yr_risk) %>% 
+  filter(sex == 2)
+```
+
+Age 40-49
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+tmp <- dat_annual_orig %>% filter(age_cur >= 40, age_cur < 50) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            N1=sum(!is.na(meno)),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            meno = mean(meno, na.rm = T),
+            early_meno = mean(meno*early_meno, na.rm = T)) %>%
+  filter(N > 30) %>%
+  select(-N) 
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac')
+```
+
+### Prevalence of Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, meno),  group = 'frac') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of Early Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, early_meno), group = 'frac') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+
+Age 50-59
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+tmp <- dat_annual_orig %>% filter(age_cur >= 50, age_cur < 60) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            N1=sum(!is.na(meno)),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            meno = mean(meno, na.rm = T),
+            early_meno = mean(meno*early_meno, na.rm = T)) %>%
+  filter(N > 30) %>%
+  select(-N) 
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac2')
+```
+
+### Prevalence of Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, meno),  group = 'frac2') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of Early Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, early_meno), group = 'frac2') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+
+Age 60-69
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+tmp <- dat_annual_orig %>% filter(age_cur >= 60, age_cur < 70) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            N1=sum(!is.na(meno)),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            meno = mean(meno, na.rm = T),
+            early_meno = mean(meno*early_meno, na.rm = T)) %>%
+  filter(N > 30) %>%
+  select(-N) 
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac3')
+```
+
+### Prevalence of Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, meno),  group = 'frac3') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of Early Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, early_meno), group = 'frac3') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+
+Age 70-79
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+tmp <- dat_annual_orig %>% filter(age_cur >= 70, age_cur < 80) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            N1=sum(!is.na(meno)),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            meno = mean(meno, na.rm = T),
+            early_meno = mean(meno*early_meno, na.rm = T)) %>%
+  filter(N > 30) %>%
+  select(-N) 
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac4')
+```
+
+### Prevalence of Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, meno),  group = 'frac4') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of Early Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, early_meno), group = 'frac4') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+Age 80+
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+tmp <- dat_annual_orig %>% filter(age_cur >= 80) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            N1=sum(!is.na(meno)),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            meno = mean(meno, na.rm = T),
+            early_meno = mean(meno*early_meno, na.rm = T)) %>%
+  filter(N > 30) %>%
+  select(-N) 
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac5')
+```
+
+### Prevalence of Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, meno),  group = 'frac5') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of Early Menopause
+
+```{r}
+dygraph(tmp %>% select(yrs, early_meno), group = 'frac5') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
