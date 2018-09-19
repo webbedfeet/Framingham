@@ -34,17 +34,27 @@ Column
 ### 5 year risk of fracture (per 1000)
 
 ```{r}
-dat_annual_orig %>% filter(age_cur >=40, age_cur < 50) %>%
+tmp <- dat_annual_orig %>% filter(age_cur >= 40, age_cur < 50) %>%
   group_by(yrs) %>%
   summarize(N = n(),
             risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            overweight = mean(bmi> 25, na.rm = T),
+            obese = mean(bmi > 30, na.rm = T),
             diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
             smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
             drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
   filter(N > 30) %>%
-  select(-N) -> tmp
+  select(-N) 
 dygraph(tmp %>% select(yrs, risk_5yr), group='frac')
 ```
+
+### Prevalence of obesity
+
+```{r}
+dygraph(tmp %>% select(yrs, obese), group = 'frac') %>% 
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
 
 ### Prevalence of diabetes
 
@@ -76,17 +86,27 @@ Column
 ### 5 year risk of fracture (per 1000)
 
 ```{r}
-dat_annual_orig %>% filter(age_cur >=50, age_cur < 60) %>%
+tmp <- dat_annual_orig %>% filter(age_cur >= 50, age_cur < 60) %>%
   group_by(yrs) %>%
   summarize(N = n(),
             risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            overweight = mean(bmi> 25, na.rm = T),
+            obese = mean(bmi > 30, na.rm = T),
             diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
             smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
             drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
   filter(N > 30) %>%
-  select(-N) -> tmp
+  select(-N) 
 dygraph(tmp %>% select(yrs, risk_5yr), group='frac2')
 ```
+
+### Prevalence of obesity
+
+```{r}
+dygraph(tmp %>% select(yrs, obese), group = 'frac2') %>% 
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
 
 ### Prevalence of diabetes
 
@@ -119,16 +139,25 @@ Column
 ### 5 year risk of fracture (per 1000)
 
 ```{r}
-dat_annual_orig %>% filter(age_cur >=60, age_cur < 70) %>%
+tmp <- dat_annual_orig %>% filter(age_cur >= 60, age_cur < 70) %>%
   group_by(yrs) %>%
   summarize(N = n(),
             risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            overweight = mean(bmi> 25, na.rm = T),
+            obese = mean(bmi > 30, na.rm = T),
             diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
             smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
             drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
   filter(N > 30) %>%
-  select(-N) -> tmp
+  select(-N) 
 dygraph(tmp %>% select(yrs, risk_5yr), group='frac3')
+```
+
+### Prevalence of obesity
+
+```{r}
+dygraph(tmp %>% select(yrs, obese), group = 'frac3') %>% 
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
 ```
 
 ### Prevalence of diabetes
@@ -162,17 +191,27 @@ Column
 ### 5 year risk of fracture (per 1000)
 
 ```{r}
-dat_annual_orig %>% filter(age_cur >=70, age_cur < 80) %>%
+tmp <- dat_annual_orig %>% filter(age_cur >= 70, age_cur < 80) %>%
   group_by(yrs) %>%
   summarize(N = n(),
             risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            overweight = mean(bmi> 25, na.rm = T),
+            obese = mean(bmi > 30, na.rm = T),
             diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
             smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
             drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
   filter(N > 30) %>%
-  select(-N) -> tmp
+  select(-N) 
 dygraph(tmp %>% select(yrs, risk_5yr), group='frac4')
 ```
+
+### Prevalence of obesity
+
+```{r}
+dygraph(tmp %>% select(yrs, obese), group = 'frac4') %>% 
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
 
 ### Prevalence of diabetes
 
@@ -204,17 +243,27 @@ Column
 ### 5 year risk of fracture (per 1000)
 
 ```{r}
-dat_annual_orig %>% filter(age_cur >= 80) %>%
+tmp <- dat_annual_orig %>% filter(age_cur >= 80) %>%
   group_by(yrs) %>%
   summarize(N = n(),
             risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            overweight = mean(bmi> 25, na.rm = T),
+            obese = mean(bmi > 30, na.rm = T),
             diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
             smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
             drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
   filter(N > 30) %>%
-  select(-N) -> tmp
+  select(-N) 
 dygraph(tmp %>% select(yrs, risk_5yr), group='frac5')
 ```
+
+### Prevalence of obesity
+
+```{r}
+dygraph(tmp %>% select(yrs, obese), group = 'frac5') %>% 
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
 
 ### Prevalence of diabetes
 
