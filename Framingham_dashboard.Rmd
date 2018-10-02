@@ -23,6 +23,19 @@ dat_annual_orig <- dat_attend_orig %>% filter(!is.na(YrFrac)) %>%
   mutate(risk_5yr = ifelse(is.na(risk_5yr), 0, 1)) %>%
   rename(yrs = yrs_5yr_risk)
 
+bl <- dat_attend_orig %>% filter(!is.na(YrFrac)) %>% 
+  nest(-PID) %>% 
+  mutate(yrs_10yr_risk = map(data, ~seq(.$YrFrac-9, .$YrFrac))) %>% 
+  select(-data) %>% 
+  unnest() %>% 
+  mutate(risk_10yr = 1) %>% 
+  right_join(dat_orig, 
+              by = c('PID' = 'PID', 'yrs_10yr_risk' = 'yrs')) %>%
+  mutate(risk_10yr = ifelse(is.na(risk_10yr), 0, 1)) %>%
+  rename(yrs = yrs_10yr_risk)
+
+
+
 dat_annual_off <- dat_attend_offspring %>% filter(!is.na(YrFrac)) %>% 
   nest(-PID) %>% 
   mutate(yrs_5yr_risk = map(data, ~seq(.$YrFrac-4, .$YrFrac))) %>% 
@@ -33,6 +46,17 @@ dat_annual_off <- dat_attend_offspring %>% filter(!is.na(YrFrac)) %>%
              by = c('PID'='PID', 'yrs_5yr_risk' = 'yrs')) %>% 
   mutate(risk_5yr = ifelse(is.na(risk_5yr), 0, 1)) %>% 
   rename(yrs = yrs_5yr_risk)
+
+bl2 <- dat_attend_offspring %>% filter(!is.na(YrFrac)) %>% 
+  nest(-PID) %>% 
+  mutate(yrs_10yr_risk = map(data, ~seq(.$YrFrac-9, .$YrFrac))) %>% 
+  select(-data) %>% 
+  unnest() %>% 
+  mutate(risk_10yr = 1) %>% 
+  right_join(dat_offspring, 
+              by = c('PID' = 'PID', 'yrs_10yr_risk' = 'yrs')) %>%
+  mutate(risk_10yr = ifelse(is.na(risk_10yr), 0, 1)) %>%
+  rename(yrs = yrs_10yr_risk)
 
 transform_orig <- function(d, yr1, yr2){
   tmp <- d %>% filter(age_cur >= yr1 ) 
@@ -58,6 +82,38 @@ transform_off <- function(d, yr1, yr2){
     group_by(yrs) %>% 
   summarize(N = n(),
             risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
+            smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
+            drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
+  filter(N > 30) %>%
+  select(-N) 
+  return(tmp)
+}
+
+transform_orig_10<- function(d, yr1, yr2){
+  tmp <- d %>% filter(age_cur >= yr1 ) 
+  if(!is.na(yr2)) tmp <- tmp %>% filter(age_cur < yr2)
+  tmp <- tmp %>% 
+    group_by(yrs) %>% 
+  summarize(N = n(),
+            risk_10yr = mean(risk_10yr, na.rm=T)*1000,
+            overweight = mean(bmi> 25, na.rm = T),
+            obese = mean(bmi > 30, na.rm = T),
+            diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
+            smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
+            drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
+  filter(N > 30) %>%
+  select(-N) 
+  return(tmp)
+}
+
+transform_off_10 <- function(d, yr1, yr2){
+  tmp <- d %>% filter(age_cur >= yr1 ) 
+  if(!is.na(yr2)) tmp <- tmp %>% filter(age_cur < yr2)
+  tmp <- tmp %>% 
+    group_by(yrs) %>% 
+  summarize(N = n(),
+            risk_10yr = mean(risk_10yr, na.rm=T)*1000,
             diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
             smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
             drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
