@@ -449,6 +449,7 @@ dat_orig <- dat_attend_orig_exploded %>%
                      function(x,y) { x$meno = ifelse(x$age_cur >= y, 1, 0); return(x)})) %>%
   select(PID, sex, data, early_meno) %>%
   unnest() %>%
+  left_join(bmi_orig, by = c('PID' = 'PID', 'exam_no' = 'exam_no')) %>%
   left_join(smoke_orig, by = c('PID' = 'PID', 'exam_no' = 'exam')) %>%
   left_join(drink_origin, by = c('PID' = 'PID', 'exam_no' = 'exam'))
 

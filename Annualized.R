@@ -90,6 +90,8 @@ tmp <- dat_attend_orig %>% mutate(YrDead = year(death_dt)) %>%
 tmp <- tmp %>%
   mutate(Age = scale(age_cur, scale = F), Age2 = Age^2, Age3 = Age^3)
 
+library(survival)
+library(rms)
 surv1 <- coxph(Surv(start_day, end_day, ifelse(cens == 1, 1, 0)) ~
                  rcs(age_cur) * (factor(sex) + diab + smoking + rf_etoh),
                data = tmp)
@@ -97,6 +99,7 @@ surv11 <- coxph(Surv(start_day, end_day, ifelse(cens == 1, 1, 0)) ~
                   age_cur * (factor(sex) + diab + smoking + rf_etoh),
                 data = tmp)
 
+anova(surv1)
 surv2 <- coxph(Surv(start_day, end_day, ifelse(cens == 1, 1, 0)) ~
                  age_cur * (early_meno + diab + smoking + rf_etoh),
                data = tmp %>% filter(sex == 2))
