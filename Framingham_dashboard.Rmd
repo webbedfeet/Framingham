@@ -1,0 +1,238 @@
+---
+title: "Framingham Original Cohort"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dygraphs)
+ProjTemplate::reload()
+load('data/rda/TimeAndFractures.rda') # Data with fracture time, and death time
+load('data/rda/predictors.rda') # Data with predictors
+dat_annual_orig <- dat_attend_orig %>% filter(!is.na(YrFrac)) %>%
+  nest(-PID) %>%
+  mutate(yrs_5yr_risk = map(data, ~seq(.$YrFrac-4, .$YrFrac))) %>%
+  select(-data) %>%
+  unnest() %>%
+  mutate(risk_5yr = 1) %>%
+  right_join(dat_orig,
+             by = c('PID' = 'PID', 'yrs_5yr_risk' = 'yrs')) %>%
+  mutate(risk_5yr = ifelse(is.na(risk_5yr), 0, 1)) %>%
+  rename(yrs = yrs_5yr_risk)
+
+```
+
+Age 40-49
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+dat_annual_orig %>% filter(age_cur >=40, age_cur < 50) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
+            smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
+            drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
+  filter(N > 30) %>%
+  select(-N) -> tmp
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac')
+```
+
+### Prevalence of diabetes
+
+```{r}
+dygraph(tmp %>% select(yrs, diab),  group = 'frac') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of smoking
+
+```{r}
+dygraph(tmp %>% select(yrs, smoking), group = 'frac') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of heavy drinking
+
+```{r}
+dygraph(tmp %>% select(yrs, drinking), xlab='Year', group='frac') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+Age 50-59
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+dat_annual_orig %>% filter(age_cur >=50, age_cur < 60) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
+            smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
+            drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
+  filter(N > 30) %>%
+  select(-N) -> tmp
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac2')
+```
+
+### Prevalence of diabetes
+
+```{r}
+dygraph(tmp %>% select(yrs, diab),  group = 'frac2') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of smoking
+
+```{r}
+dygraph(tmp %>% select(yrs, smoking), group = 'frac2') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of heavy drinking
+
+```{r}
+dygraph(tmp %>% select(yrs, drinking), xlab='Year', group='frac2') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+
+Age 60-69
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+dat_annual_orig %>% filter(age_cur >=60, age_cur < 70) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
+            smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
+            drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
+  filter(N > 30) %>%
+  select(-N) -> tmp
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac3')
+```
+
+### Prevalence of diabetes
+
+```{r}
+dygraph(tmp %>% select(yrs, diab),  group = 'frac3') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of smoking
+
+```{r}
+dygraph(tmp %>% select(yrs, smoking), group = 'frac3') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of heavy drinking
+
+```{r}
+dygraph(tmp %>% select(yrs, drinking), xlab='Year', group='frac3') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+
+Age 70-79
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+dat_annual_orig %>% filter(age_cur >=70, age_cur < 80) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
+            smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
+            drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
+  filter(N > 30) %>%
+  select(-N) -> tmp
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac4')
+```
+
+### Prevalence of diabetes
+
+```{r}
+dygraph(tmp %>% select(yrs, diab),  group = 'frac4') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of smoking
+
+```{r}
+dygraph(tmp %>% select(yrs, smoking), group = 'frac4') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of heavy drinking
+
+```{r}
+dygraph(tmp %>% select(yrs, drinking), xlab='Year', group='frac4') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+Age 80+
+=============================================================
+
+Column
+-------------------------------------------------------------
+
+### 5 year risk of fracture (per 1000)
+
+```{r}
+dat_annual_orig %>% filter(age_cur >= 80) %>%
+  group_by(yrs) %>%
+  summarize(N = n(),
+            risk_5yr = mean(risk_5yr, na.rm=T)*1000,
+            diab = ifelse(sum(!is.na(diab)) > 20, mean(diab, na.rm=T),NA),
+            smoking = ifelse(sum(!is.na(smoking))>20, mean(smoking, na.rm=T),NA),
+            drinking = ifelse(sum(!is.na(rf_etoh)) > 20, mean(rf_etoh, na.rm= T), NA)) %>%
+  filter(N > 30) %>%
+  select(-N) -> tmp
+dygraph(tmp %>% select(yrs, risk_5yr), group='frac5')
+```
+
+### Prevalence of diabetes
+
+```{r}
+dygraph(tmp %>% select(yrs, diab),  group = 'frac5') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of smoking
+
+```{r}
+dygraph(tmp %>% select(yrs, smoking), group = 'frac5') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
+
+### Prevalence of heavy drinking
+
+```{r}
+dygraph(tmp %>% select(yrs, drinking), xlab='Year', group='frac5') %>%
+  dyAxis('y', axisLabelFormatter = 'function(d){return Math.round(d*100) + "%"}')
+```
