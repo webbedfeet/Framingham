@@ -1,15 +1,20 @@
 #'---
-#'title: Incidence summaries
+#'title: Incidence summaries for Framingham cohorts
 #'author: Abhijit Dasgupta
 #'date: "`r Sys.Date()`"
+#'output:
+#'  html_document:
+#'    toc: true
 #'---
 #'
 #+ preamble, include=F
 ProjTemplate::reload()
 library(glue)
-knitr::opts_chunk$set(cache = T, echo = F)
+knitr::opts_chunk$set(cache = T, echo = F, fig.width=11)
 load('data/rda/predictors.rda')
 
+#' # Crude incidence rates
+#'
 #' We need to compute the person-years at risk in each 5 year period, and see if the incidence rates
 #' of fractures declined over time. This also has to be done on an age-adjusted basis, since we know
 #' that age is the biggest risk factor for fractures.
@@ -87,7 +92,8 @@ py_overall %>% filter(age_grp != '(0,40]', py > 100, !is.na(yr_grp), !is.na(age_
   labs(x = 'Year', y = 'Incidence rate (per 1000 py)')+
   ggtitle('Combined cohorts')
 
-#' # Comorbidities
+#'
+#' # Ecological patterns of comorbidities
 #'
 #+ include=F
 comorb_orig <- dat_orig %>% group_by(age_grp, yr_grp) %>%
@@ -131,3 +137,18 @@ ggplot(comorb_combined, aes(yr_grp, bmi))+geom_point()+facet_grid(cohort ~ age_g
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #' __Caveat__: BMI from offspring cohort is based on one recorded BMI at exam 2.
+#'
+#' # Some conclusions
+#'
+#' It appears that the decreasing rate of fractures over time, adjusted for age, only appears in the
+#' offspring cohort. These estimates may be unstable, since there are only 66 fractures reported in
+#' this cohort.
+#'
+#' In fact, it is interesting to note that the offspring cohort has much lower rates of fractures than
+#' original cohort members at similar ages, by around 50 percent, for the same age groups and same years,
+#' at least qualitatively, in the later years.
+#'
+#' Factors that may be worth exploring are the relationships with BMI, and to some exten, smoking and diabetes,
+#'  which qualitatively
+#' also have similar ecological trends as fracture incidence.
+#'
