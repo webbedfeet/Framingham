@@ -427,6 +427,13 @@ bmi_orig <- read_sas(file.path(datadir,'newdat','framcohort','Datasets','bmi.sas
 
 ### Not using BMI from offspring cohort since it is only recorded at exam 2
 
+bmi_off <- read_sas(file.path(datadir,'newdat','framoffspring','Datasets','bmi_ex2.sas7bdat')) %>%
+  set_names(toupper(names(.))) %>%
+  select(-IDTYPE) %>%
+  arrange(PID) %>%
+  select(PID, everything()) %>%
+  set_names(c('PID','exam_no','bmi'))
+
 # Other exposures -----------------------------------------------------------------------------
 
 ## Smoking
@@ -461,7 +468,8 @@ dat_offspring <- dat_attend_offspring_exploded %>%
   select(PID, sex, data, early_meno) %>%
   unnest() %>%
   left_join(smoke_off, by = c('PID' = 'pid', 'exam_no' = 'exam')) %>%
-  left_join(drink_offspring, by = c('PID' = 'pid', 'exam_no' = 'exam'))
+  left_join(drink_offspring, by = c('PID' = 'pid', 'exam_no' = 'exam')) %>%
+  left_join(bmi_off %>% select(-exam_no)) # added exam2 bmi to all exams
 
 save(dat_orig, dat_offspring, file = 'data/rda/predictors.rda', compress = T)
 
