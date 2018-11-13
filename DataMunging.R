@@ -253,20 +253,18 @@ dat_attend_orig <- d11 %>%
     frac_indic = ifelse(is.na(YrFrac), 0, 1),
     year1 = start_yr,
     no_yrs = end_duration - start_yr + 1
-  )
+  ) %>%
+  mutate(end_duration = ifelse(end_duration - end_yr > 2, end_yr+2, end_duration)) %>%  # don't go beyond 2 yrs of last exam
+  mutate(status = ifelse(!is.na(YrFrac) & (end_duration == YrFrac), 1, 0))
 
 dat_attend_orig_exploded <-
-  dat_attend_orig[rep(seq_len(nrow(dat_attend_orig)), dat_attend_orig$no_yrs), ] %>%
-  select(-no_yrs) %>%
-  nest(age1, start_yr:year1) %>%
-  mutate(data = map(data, ~ .x %>%
-                      mutate(
-                        yrs = unique(start_yr) + seq_len(nrow(.x)) - 1,
-                        frac_indic = ifelse(!is.na(YrFrac) & YrFrac == yrs, 1, 0),
-                        age_cur = unique(age1) + seq_len(nrow(.x)) - 1
-                      ))) %>%
-  unnest() %>%
-  select(PID:sex, yrs, frac_indic, age_cur)
+  dat_attend_orig %>% mutate(yrs = map2(start_yr, end_duration, ~seq(.x, .y, by=1))) %>%
+  mutate(age_cur = map2(age1, yrs, ~.x + seq_along(.y)-1)) %>% unnest() %>%
+  mutate(yr_grp = cut(yrs, seq(1950, 2010, by=5))) %>%
+  mutate(age_grp = cut(age_cur, c(0,40,50,60,70,80,105))) %>%
+  mutate(frac_ind = ifelse(!is.na(YrFrac) & YrFrac == yrs, 1, 0)) %>%
+  select(PID, sex, year1, yrs, age_cur, yr_grp, age_grp, frac_ind)
+
 
 ## Offspring cohort
 d31 <- read_sas(file.path(datadir, "sas", "vr_dates_2014_a_0912d_yr_offspring.sas7bdat"))
@@ -298,19 +296,20 @@ dat_attend_offspring <- dat_attend_offspring %>%
   mutate(
     end_duration = pmin(end_yr, YrFrac, na.rm = T),
     no_yrs = end_duration - start_yr + 1
-  )
+  ) %>%
+  mutate(end_duration = ifelse(end_duration - end_yr > 2, end_yr + 2, end_duration)) %>%
+  mutate(status = ifelse(!is.na(YrFrac) & (YrFrac == end_duration), 1, 0)) %>%
+  mutate(year1 = start_yr)
 
-dat_attend_offspring_exploded <- dat_attend_offspring[rep(seq_len(nrow(dat_attend_offspring)), dat_attend_offspring$no_yrs), ] %>%
-  select(-no_yrs) %>%
-  nest(age1, start_yr:end_duration) %>%
-  mutate(data = map(data, ~ .x %>%
-                      mutate(
-                        yrs = unique(start_yr) + seq_len(nrow(.x)) - 1,
-                        frac_indic = ifelse(!is.na(YrFrac) & YrFrac == yrs, 1, 0),
-                        age_cur = unique(age1) + seq_len(nrow(.x)) - 1
-                      ))) %>%
-  unnest() %>%
-  select(PID:sex, yrs, frac_indic, age_cur)
+dat_attend_offspring_exploded <-
+  dat_attend_offspring %>% mutate(yrs = map2(start_yr, end_duration, ~seq(.x, .y, by=1))) %>%
+  mutate(age_cur = map2(age1, yrs, ~.x + seq_along(.y)-1)) %>% unnest() %>%
+  mutate(yr_grp = cut(yrs, seq(1970, 2015, by = 5))) %>%
+  mutate(age_grp = cut(age_cur, c(0,40,50,60,70,80,105))) %>%
+  mutate(frac_ind = ifelse(!is.na(YrFrac) & YrFrac == yrs, 1, 0)) %>%
+  select(PID, sex, year1, yrs, age_cur, yr_grp, age_grp, frac_ind)
+
+
 
 # Death -------------------------------------------------------------------
 
