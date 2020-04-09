@@ -106,10 +106,44 @@ process_fn <- function(d){
 info_orig <- process_fn(info_orig)
 info_offspring <- process_fn(info_offspring)
 
-
+estrogen_orig <- estrogen_orig %>% left_join(info_orig)
+estrogen_offspring <- estrogen_offspring %>% left_join(info_offspring)
 # Questions about males ---------------------------------------------------
 
 estrogen_orig %>% tabyl(exam, estr, sex) %>% adorn_percentages() %>% adorn_pct_formatting()
 estrogen_offspring %>% tabyl(exam, estr, sex) %>% adorn_percentages() %>% adorn_pct_formatting()
 
 
+# Just females ------------------------------------------------------------
+
+estrogen_orig_f <- estrogen_orig %>% filter(sex==2)
+estrogen_offspring_f <- estrogen_offspring %>% filter(sex==2)
+
+estrogen_f <- list('orig' = estrogen_orig_f,
+                   'offspring' = estrogen_offspring_f) %>%
+  bind_rows(.id='cohort') %>%
+  select(pid, exam, estr, sex, age, examyr, everything()) %>%
+  as_tibble() %>%
+  mutate(year_cat = cut(examyr,
+                        breaks = seq(1978, 2008, by=5),
+                        include.lowest=F,
+                        right = F),
+         age_cat = cut(age,
+                       breaks = c(0, seq(20,80, by=10), Inf),
+                       labels = c('< 20','20-30','30-40','40-50',
+                                  '50-60','60-70','70-80','80 and above'))) %>%
+  mutate(year_mid = case_when(
+    year_cat=='[1978,1983)'~1980,
+    year_cat=='[1983,1988)'~1985,
+    year_cat=='[1988,1993)'~1990,
+    year_cat=='[1993,1998)'~1995,
+    year_cat=='[1998,2003)'~2000,
+    year_cat=='[2003,2008)'~2005
+  ),
+  year_mid = as.factor(year_mid))
+openxlsx::write.xlsx(estrogen_f, file = 'Estrogen.xlsx')
+
+out <- tabyl(filter(estrogen_f, age>=50), year_mid, estr, age_cat) %>%
+  adorn_percentages() %>%
+  bind_rows(.id = 'age_cat') %>%
+  filter(!is.na(`1`), !is.na(year_mid))
